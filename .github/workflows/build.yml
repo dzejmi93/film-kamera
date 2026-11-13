@@ -27,16 +27,16 @@ jobs:
         run: gradle assembleRelease --no-daemon --stacktrace
 
       - name: Rename APK
-        run: cp app/build/outputs/apk/release/app-release.apk Roll.apk
+        run: cp app/build/outputs/apk/release/app-release.apk Kadar.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Roll
-          path: Roll.apk
+          name: Kadar
+          path: Kadar.apk
 
       - name: Publish download
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete latest --yes --cleanup-tag || true
-          gh release create latest Roll.apk --title "Roll" --notes "Download Roll.apk on your phone and install it."
+          gh release create latest Kadar.apk --title "Kadar" --notes "Download Kadar.apk on your phone and install it."

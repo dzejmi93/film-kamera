@@ -6,12 +6,12 @@
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Roll">
+<meta name="apple-mobile-web-app-title" content="Kadar">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon-192.png">
-<title>Roll</title>
+<title>Kadar</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Manrope:wght@400;500;600;700&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
 <style>
@@ -148,7 +148,7 @@
     <button class="circ ghost" id="bFlash" aria-label="Flash" aria-pressed="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
     </button>
-    <div class="brand">Roll</div>
+    <div class="brand">Kadar</div>
     <button class="circ" id="bRoll" aria-label="Roll">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>
     </button>
@@ -662,7 +662,7 @@ $("bFlash").onclick = async () => {
 
 /* ================= OKIDANJE ================= */
 const pad = n => String(n).padStart(2, "0");
-function fileName(film_id, t){ const d = new Date(t); return `ROLL_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}_${film_id}.jpg`; }
+function fileName(film_id, t){ const d = new Date(t); return `KADAR_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}_${film_id}.jpg`; }
 let current = null; // {id, blob, film, no, t}
 
 async function commit(canvas, no){
@@ -760,7 +760,7 @@ $("bSave").onclick = async () => {
   if (!current || !current.blob){ toast("Still developing…"); return; }
   if (NATIVE){
     const ok = NATIVE.saveImage(await toB64(current.blob), fileName(current.film, current.t));
-    toast(ok ? "Saved to gallery · Roll" : "Couldn’t save. Try again.");
+    toast(ok ? "Saved to gallery · Kadar" : "Couldn’t save. Try again.");
     return;
   }
   if (isIOS){ if (!(await shareFiles([asFile(current)], "Choose “Save Image”"))) download(current.blob, fileName(current.film, current.t)); }
@@ -826,7 +826,7 @@ $("bSend").onclick = async () => {
   if (!list.length){ toast("Your roll is empty."); return; }
   sendPending = list;
   $("sendTitle").textContent = `Send ${list.length} photo${list.length > 1 ? "s" : ""}`;
-  $("sendText").textContent = "Google Photos adds them to your own library, where you can make an album and share it. Nothing passes through Roll.";
+  $("sendText").textContent = "Google Photos adds them to your own library, where you can make an album and share it. Nothing passes through Kadar.";
   $("sendSheet").classList.add("on");
 };
 const closeSend = () => $("sendSheet").classList.remove("on");
