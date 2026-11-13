@@ -41,6 +41,10 @@
   .stamp.on{display:block}
   .zoom{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:4px;padding:4px;border-radius:30px;
     background:rgba(0,0,0,.5);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  .focus{position:absolute;width:74px;height:74px;margin:-37px 0 0 -37px;border:1.5px solid var(--orange);border-radius:14px;
+    pointer-events:none;opacity:0;transform:scale(1.35)}
+  .focus.on{animation:foc 1.4s ease forwards}
+  @keyframes foc{0%{opacity:1;transform:scale(1.35)}18%{opacity:1;transform:scale(1)}26%{opacity:.55}34%{opacity:1}80%{opacity:1}100%{opacity:0;transform:scale(1)}}
   .zoom button{width:36px;height:36px;border-radius:50%;font-size:12px;font-weight:600;color:#ddd}
   .zoom button[aria-pressed="true"]{background:rgba(255,255,255,.18);color:var(--orange)}
   .overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:30px;background:var(--s1)}
@@ -118,10 +122,11 @@
     </button>
   </div>
 
-  <div class="vf">
+  <div class="vf" id="vf">
     <video id="video" playsinline muted autoplay></video>
     <canvas id="preview"></canvas>
     <div class="stamp" id="stamp"></div>
+    <div class="focus" id="focus"></div>
     <div class="zoom" id="zoom" hidden>
       <button data-z="1" aria-pressed="true">1×</button>
       <button data-z="2" aria-pressed="false">2×</button>
@@ -222,7 +227,7 @@ const $ = id => document.getElementById(id);
 const video = $("video"), preview = $("preview");
 let pctx = null; // 2D rezerva ako WebGL ne radi
 let film = FILMS[1], LUT, stream = null, track = null, facing = "environment", live = false, raf = 0;
-let zoom = 1, hwZoom = false, torchOK = false, torchOn = false, flashOK = false, flashOn = false, imageCapture = null;
+let zoom = 1, zoomCur = 1, zoomAnim = 0, focusOK = false, focusTimer = 0, hwZoom = false, torchOK = false, torchOn = false, flashOK = false, flashOn = false, imageCapture = null;
 const opts = { date:false, frame:false };
 const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const store = { get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
@@ -387,7 +392,7 @@ function syncLUT(){ if (glPrev) glPrev.setLUT(LUT); if (glCap) glCap.setLUT(LUT)
 
 function develop(src, sw, sh, no, fromCam){
   let sx = 0, sy = 0, cw = sw, ch = sh;
-  if (fromCam && zoom === 2 && !hwZoom){ cw = sw/2; ch = sh/2; sx = sw/4; sy = sh/4; }
+  if (fromCam && zoom > 1 && !hwZoom){ cw = sw/zoom; ch = sh/zoom; sx = (sw-cw)/2; sy = (sh-ch)/2; }
   const lim = Math.min(4000, glCap ? glCap.maxTex : 4000);
   const k = Math.min(1, lim / Math.max(cw, ch)), w = Math.round(cw*k), h = Math.round(ch*k);
   const c = document.createElement("canvas"); c.width = w; c.height = h;
@@ -447,7 +452,7 @@ function loop(){
   if (!live) return;
   if (video.readyState >= 2 && video.videoWidth){
     let vw = video.videoWidth, vh = video.videoHeight, sx = 0, sy = 0;
-    if (zoom === 2 && !hwZoom){ sx = vw/4; sy = vh/4; vw /= 2; vh /= 2; }
+    if (zoomCur > 1.001 && !hwZoom){ const nw = vw/zoomCur, nh = vh/zoomCur; sx = (vw-nw)/2; sy = (vh-nh)/2; vw = nw; vh = nh; }
     if (glPrev){
       const W = video.videoWidth, H = video.videoHeight;
       const k = Math.min(1, 1440 / Math.max(vw, vh));
@@ -485,6 +490,8 @@ async function startCamera(){
     const cap = track.getCapabilities ? track.getCapabilities() : {};
     hwZoom = !!(cap.zoom && cap.zoom.max >= 2);
     torchOK = !!cap.torch;
+    focusOK = !!(cap.focusMode && cap.focusMode.includes("single-shot"));
+    if (cap.focusMode && cap.focusMode.includes("continuous")){ try{ await track.applyConstraints({advanced:[{focusMode:"continuous"}]}); }catch(e){} }
     // Pun kvalitet: Chrome na Androidu (npr. Galaxy S23) slika pravu fotografiju, ne kadar iz videa
     imageCapture = null; flashOK = false; flashOn = false;
     if ("ImageCapture" in window){
@@ -496,7 +503,7 @@ async function startCamera(){
     }
     $("bFlash").classList.toggle("ghost", !(torchOK || flashOK));
     torchOn = false; $("bFlash").setAttribute("aria-pressed", "false");
-    await setZoom(zoom);
+    zoomCur = 1; await setZoom(zoom, true);
     $("ovStart").style.display = "none"; $("zoom").hidden = false;
     store.set("fk_cam", true);
     live = true; loop(); updateCounter();
@@ -506,10 +513,78 @@ function stopCamera(){
   stopLoop();
   if (stream){ stream.getTracks().forEach(t => t.stop()); stream = null; track = null; }
 }
-async function setZoom(z){
+/* Gladak prelaz 1× ↔ 2× (oko 0,35 s) */
+let zBusy = false;
+async function applyHwZoom(v){
+  if (!hwZoom || !track) return;
+  try{ await track.applyConstraints({advanced:[{zoom:v}]}); }catch(e){ hwZoom = false; }
+}
+async function setZoom(z, instant){
   zoom = z;
   document.querySelectorAll("#zoom button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.z === z));
-  if (hwZoom && track){ try{ await track.applyConstraints({advanced:[{zoom:z}]}); }catch(e){ hwZoom = false; } }
+  cancelAnimationFrame(zoomAnim);
+  const from = zoomCur, t0 = performance.now(), D = instant ? 0 : 350;
+  const ease = t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3)/2;
+  const step = async now => {
+    const t = D ? Math.min(1, (now - t0) / D) : 1;
+    zoomCur = from + (z - from) * ease(t);
+    if (t < 1){
+      if (hwZoom && !zBusy){ zBusy = true; applyHwZoom(zoomCur).finally(() => zBusy = false); }
+      zoomAnim = requestAnimationFrame(step);
+    } else {
+      zoomCur = z;
+      while (zBusy) await new Promise(r => setTimeout(r, 16));
+      await applyHwZoom(z);
+    }
+  };
+  zoomAnim = requestAnimationFrame(step);
+}
+
+/* Fokus na dodir */
+function tapToVideo(clientX, clientY){
+  const r = $("vf").getBoundingClientRect(), a = preview.width / preview.height, e = r.width / r.height;
+  let dw, dh, ox = 0, oy = 0;
+  if (a > e){ dh = r.height; dw = dh * a; ox = (r.width - dw) / 2; } else { dw = r.width; dh = dw / a; oy = (r.height - dh) / 2; }
+  let u = (clientX - r.left - ox) / dw, v = (clientY - r.top - oy) / dh;
+  if (facing === "user") u = 1 - u;
+  if (!hwZoom && zoomCur > 1){ u = (1 - 1/zoomCur)/2 + u/zoomCur; v = (1 - 1/zoomCur)/2 + v/zoomCur; }
+  return { x: c01(u), y: c01(v), px: clientX - r.left, py: clientY - r.top };
+}
+async function focusAt(clientX, clientY){
+  if (!track || !live) return;
+  const p = tapToVideo(clientX, clientY), f = $("focus");
+  f.style.left = p.px + "px"; f.style.top = p.py + "px";
+  f.classList.remove("on"); void f.offsetWidth; f.classList.add("on");
+  if (navigator.vibrate) navigator.vibrate(6);
+  if (!focusOK) return;
+  clearTimeout(focusTimer);
+  const cap = track.getCapabilities ? track.getCapabilities() : {};
+  const c = { pointsOfInterest: [{x: p.x, y: p.y}], focusMode: "single-shot" };
+  if (cap.exposureMode && cap.exposureMode.includes("single-shot")) c.exposureMode = "single-shot";
+  try{ await track.applyConstraints({advanced:[c]}); }catch(e){
+    try{ await track.applyConstraints({advanced:[{focusMode:"single-shot"}]}); }catch(_){}
+  }
+  // posle 6 s vrati automatski fokus
+  focusTimer = setTimeout(async () => {
+    if (!track) return;
+    const back = {};
+    if (cap.focusMode && cap.focusMode.includes("continuous")) back.focusMode = "continuous";
+    if (cap.exposureMode && cap.exposureMode.includes("continuous")) back.exposureMode = "continuous";
+    try{ await track.applyConstraints({advanced:[back]}); }catch(e){}
+  }, 6000);
+}
+let tapStart = null;
+function bindTap(){
+  const vf = $("vf");
+  vf.addEventListener("pointerdown", e => { tapStart = {x: e.clientX, y: e.clientY, t: Date.now()}; });
+  vf.addEventListener("pointerup", e => {
+    if (!tapStart) return;
+    const moved = Math.hypot(e.clientX - tapStart.x, e.clientY - tapStart.y), dt = Date.now() - tapStart.t;
+    tapStart = null;
+    if (moved > 12 || dt > 600) return;
+    if (e.target.closest(".zoom, .overlay, button")) return;
+    focusAt(e.clientX, e.clientY);
+  });
 }
 document.querySelectorAll("#zoom button").forEach(b => b.onclick = () => setZoom(+b.dataset.z));
 $("bFlash").onclick = async () => {
@@ -743,6 +818,7 @@ function bindOpt(id, key){
   Object.assign(opts, store.get("fk_opts", {}));
   film = FILMS.find(f => f.id === store.get("fk_film", "portra400")) || FILMS[1]; LUT = buildLUT(film);
   initGL();
+  bindTap();
   $("stamp").textContent = dateText(); $("stamp").classList.toggle("on", opts.date);
   bindOpt("oDate", "date"); bindOpt("oFrame", "frame");
   renderStyles();
