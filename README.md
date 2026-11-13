@@ -1,15 +1,16 @@
-# Film Kamera
+# Roll
 
-Kamera za Android sa četiri analogna filma: Portra 800, Portra 400, HP5 i Gold 200.
+An Android film camera with four looks: Portra 800, Portra 400, HP5 and Gold 200.
 
-- Slike se razvijaju samo na telefonu. Aplikacija nema server i ništa ne šalje na internet.
-- „Sačuvaj u galeriju“ čuva sliku u folder **Pictures/Film Kamera**.
-- „Google Drive“ otvara Drive sa slikom, pa ide direktno na tvoj nalog.
-- Rola od 27 snimaka, zum 1×/2×, blic, datum i okvir filma.
-- Dugmad za jačinu zvuka okidaju, kao na pravom aparatu.
+- Photos develop on the phone. The app has no server and sends nothing to the internet.
+- **Save to gallery** puts photos in **Pictures/Roll**.
+- **Google Drive** opens Drive with the photo, so it goes straight to your own account.
+- A roll of 27 shots, 1×/2× zoom, flash, date stamp and film border.
+- The volume buttons take a photo, like a real camera.
+- Preview and developing run on the GPU (WebGL).
 
-## Preuzimanje
+## Download
 
-Na telefonu otvori **Releases → latest** i preuzmi `FilmKamera.apk`.
+On your phone open **Releases → latest** and download `Roll.apk`.
 
-Svaki push na `main` automatski pravi novi APK (GitHub Actions).
+Every push to `main` builds a new APK (GitHub Actions).

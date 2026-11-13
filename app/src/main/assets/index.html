@@ -1,25 +1,25 @@
 <!DOCTYPE html>
-<html lang="sr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Film Kamera">
+<meta name="apple-mobile-web-app-title" content="Roll">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon-192.png">
-<title>Film Kamera</title>
+<title>Roll</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Manrope:wght@400;500;600;700&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
 <style>
   :root{ --bg:#000; --s1:#121212; --s2:#1c1c1c; --line:#2a2a2a; --ink:#fff; --mute:#8a8a8a; --orange:#f39a2b; }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
-  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;overflow:hidden;overscroll-behavior:none}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:Manrope,system-ui,sans-serif;overflow:hidden;overscroll-behavior:none}
   button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
-  .serif{font-family:"Instrument Serif",Georgia,serif;font-weight:400}
+  .serif{font-family:Fraunces,Georgia,serif;font-weight:400}
   .screen{position:fixed;inset:0;display:none;flex-direction:column;
     padding:calc(env(safe-area-inset-top) + 8px) 0 calc(env(safe-area-inset-bottom) + 10px)}
   .screen.on{display:flex}
@@ -31,7 +31,7 @@
   .circ[aria-pressed="true"]{background:#fff;color:#000}
   .circ.ghost{visibility:hidden}
   .counter{text-align:center;line-height:1}
-  .counter b{display:block;font-family:"Instrument Serif",serif;font-weight:400;font-size:34px}
+  .counter b{display:block;font-family:Fraunces,serif;font-weight:400;font-size:30px;font-variation-settings:"opsz" 72}
   .counter span{font-size:10px;letter-spacing:.16em;color:var(--mute)}
   .vf{flex:1;min-height:0;position:relative;margin:0 12px;border-radius:26px;overflow:hidden;background:var(--s1)}
   .vf canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -44,7 +44,7 @@
   .zoom button{width:36px;height:36px;border-radius:50%;font-size:12px;font-weight:600;color:#ddd}
   .zoom button[aria-pressed="true"]{background:rgba(255,255,255,.18);color:var(--orange)}
   .overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:30px;background:var(--s1)}
-  .overlay h2{margin:0;font-family:"Instrument Serif",serif;font-weight:400;font-size:38px;line-height:1.05}
+  .overlay h2{margin:0;font-family:Fraunces,serif;font-weight:400;font-size:34px;line-height:1.05;letter-spacing:-.01em}
   .overlay h2 i{color:var(--mute)}
   .overlay p{margin:0;color:var(--mute);font-size:14px;line-height:1.5;max-width:270px}
   .wbtn{background:#fff;color:#000;border-radius:30px;padding:14px 26px;font-weight:600;font-size:15px}
@@ -53,9 +53,9 @@
   .styles{position:relative;height:54px;margin-top:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;
     display:flex;align-items:center;padding:0 calc(50% - 60px)}
   .styles::-webkit-scrollbar{display:none}
-  .style{flex:0 0 120px;scroll-snap-align:center;text-align:center;font-family:"Instrument Serif",serif;font-size:22px;color:#555;transition:color .2s,transform .2s}
+  .style{flex:0 0 120px;scroll-snap-align:center;text-align:center;font-family:Fraunces,serif;font-size:19px;color:#555;transition:color .2s,transform .2s}
   .style.on{color:#fff;transform:scale(1.08)}
-  .style small{display:block;font-family:Inter,sans-serif;font-size:10px;letter-spacing:.12em;color:var(--orange);opacity:0;transition:opacity .2s}
+  .style small{display:block;font-family:Manrope,sans-serif;font-size:10px;letter-spacing:.12em;color:var(--orange);opacity:0;transition:opacity .2s}
   .style.on small{opacity:1}
 
   .bottom{display:flex;align-items:center;justify-content:space-between;padding:8px 30px 4px}
@@ -70,13 +70,13 @@
 
   /* ---------- fotografija ---------- */
   .head{display:flex;align-items:center;justify-content:space-between;padding:4px 18px 12px;height:58px}
-  .head h1{margin:0;font-family:"Instrument Serif",serif;font-weight:400;font-size:28px}
+  .head h1{margin:0;font-family:Fraunces,serif;font-weight:400;font-size:25px}
   .head h1 i{color:var(--mute)}
   .photo{flex:1;min-height:0;position:relative;margin:0 12px;border-radius:26px;overflow:hidden;background:var(--s1)}
   .photo canvas,.photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
   .photo .dev{animation:dev 2.4s ease-out forwards}
   @keyframes dev{0%{filter:brightness(.05) sepia(1) blur(8px);opacity:.3}55%{filter:brightness(.7) sepia(.4) blur(1px);opacity:1}100%{filter:none}}
-  .devl{position:absolute;inset:auto 0 18px;text-align:center;font-family:"Instrument Serif",serif;font-style:italic;font-size:20px;opacity:0;animation:lbl 2.4s ease forwards}
+  .devl{position:absolute;inset:auto 0 18px;text-align:center;font-family:Fraunces,serif;font-style:italic;font-size:20px;opacity:0;animation:lbl 2.4s ease forwards}
   @keyframes lbl{0%,10%{opacity:0}25%,70%{opacity:.9}100%{opacity:0}}
   .actions{display:flex;flex-direction:column;gap:8px;padding:14px 12px 0}
   .row{display:flex;gap:8px}
@@ -88,7 +88,7 @@
   .grid{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:0 3px;align-content:start}
   .grid button{aspect-ratio:3/4;background:var(--s2) center/cover}
   .emptyg{grid-column:1/-1;text-align:center;color:var(--mute);padding:60px 30px;font-size:14px;line-height:1.5}
-  .emptyg b{display:block;font-family:"Instrument Serif",serif;font-weight:400;font-size:30px;color:#fff;margin-bottom:6px}
+  .emptyg b{display:block;font-family:Fraunces,serif;font-weight:400;font-size:27px;color:#fff;margin-bottom:6px}
   .foot{padding:12px 12px 0}
 
   .toast{position:fixed;left:50%;bottom:calc(30px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#fff;color:#000;
@@ -99,7 +99,7 @@
   .sheet{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:flex-end;z-index:7}
   .sheet.on{display:flex}
   .sheet > div{width:100%;background:var(--s1);border-radius:26px 26px 0 0;padding:24px 18px calc(env(safe-area-inset-bottom) + 18px)}
-  .sheet h3{margin:0 0 6px;font-family:"Instrument Serif",serif;font-weight:400;font-size:28px}
+  .sheet h3{margin:0 0 6px;font-family:Fraunces,serif;font-weight:400;font-size:25px}
   .sheet p{margin:0 0 16px;color:var(--mute);font-size:14px;line-height:1.5}
   input[type=file]{display:none}
 </style>
@@ -109,11 +109,11 @@
 <!-- ============ KAMERA ============ -->
 <section class="screen on" id="sCam">
   <div class="top">
-    <button class="circ ghost" id="bFlash" aria-label="Blic" aria-pressed="false">
+    <button class="circ ghost" id="bFlash" aria-label="Flash" aria-pressed="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
     </button>
-    <div class="counter"><b id="left">27</b><span>SNIMAKA</span></div>
-    <button class="circ" id="bRoll" aria-label="Rola">
+    <div class="counter"><b id="left">27</b><span>SHOTS LEFT</span></div>
+    <button class="circ" id="bRoll" aria-label="Roll">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>
     </button>
   </div>
@@ -127,16 +127,16 @@
       <button data-z="2" aria-pressed="false">2×</button>
     </div>
     <div class="overlay" id="ovStart">
-      <h2>Jedna rola.<br><i>27 snimaka.</i></h2>
-      <p>Svaka slika se razvija samo na tvom telefonu. Ništa ne ide na tuđi server.</p>
-      <button class="wbtn" id="bStart">Pokreni kameru</button>
-      <button class="tlink" id="bNative">ili koristi kameru telefona</button>
+      <h2>One roll.<br><i>27 shots.</i></h2>
+      <p>Every photo develops on your phone. Nothing is sent to any server.</p>
+      <button class="wbtn" id="bStart">Start camera</button>
+      <button class="tlink" id="bNative">or use the phone camera</button>
     </div>
     <div class="overlay" id="ovDone" style="display:none">
-      <h2>Rola je<br><i>gotova.</i></h2>
-      <p>Iskoristio si svih 27 snimaka. Pogledaj rolu ili ubaci novu.</p>
-      <button class="wbtn" id="bNew1">Ubaci novu rolu</button>
-      <button class="tlink" id="bSee">Pogledaj rolu</button>
+      <h2>That’s a<br><i>wrap.</i></h2>
+      <p>You used all 27 shots. Look back at your roll or load a new one.</p>
+      <button class="wbtn" id="bNew1">Load a new roll</button>
+      <button class="tlink" id="bSee">See your roll</button>
     </div>
   </div>
 
@@ -150,26 +150,26 @@
     <button class="thumb" id="bThumb" aria-label="Poslednja slika"></button>
   </div>
   <div class="opts">
-    <button class="chip" id="oDate" aria-pressed="false">Datum</button>
-    <button class="chip" id="oFrame" aria-pressed="false">Okvir filma</button>
+    <button class="chip" id="oDate" aria-pressed="false">Date</button>
+    <button class="chip" id="oFrame" aria-pressed="false">Film border</button>
   </div>
 </section>
 
 <!-- ============ FOTOGRAFIJA ============ -->
 <section class="screen" id="sPhoto">
   <div class="head">
-    <button class="circ" id="bPhotoBack" aria-label="Nazad">
+    <button class="circ" id="bPhotoBack" aria-label="Back">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>
     </button>
     <h1 id="pTitle">Portra <i>400</i></h1>
-    <div class="counter"><b id="pNo" style="font-size:26px">1</b><span>SNIMAK</span></div>
+    <div class="counter"><b id="pNo" style="font-size:26px">1</b><span>SHOT</span></div>
   </div>
   <div class="photo" id="photo"></div>
   <div class="actions">
-    <button class="btn main" id="bSave">Sačuvaj u galeriju</button>
+    <button class="btn main" id="bSave">Save to gallery</button>
     <div class="row">
       <button class="btn" id="bDrive">Google Drive</button>
-      <button class="btn red" id="bDel">Obriši</button>
+      <button class="btn red" id="bDel">Delete</button>
     </div>
   </div>
 </section>
@@ -177,23 +177,23 @@
 <!-- ============ ROLA ============ -->
 <section class="screen" id="sRoll">
   <div class="head">
-    <button class="circ" id="bRollBack" aria-label="Nazad">
+    <button class="circ" id="bRollBack" aria-label="Back">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>
     </button>
-    <h1>Moja <i>rola</i></h1>
+    <h1>My <i>roll</i></h1>
     <div class="circ ghost"></div>
   </div>
   <div class="grid" id="grid"></div>
   <div class="foot row">
-    <button class="btn" id="bSaveAll">Sačuvaj sve</button>
-    <button class="btn" id="bNew2">Nova rola</button>
+    <button class="btn" id="bSaveAll">Save all</button>
+    <button class="btn" id="bNew2">New roll</button>
   </div>
 </section>
 
 <div class="sheet" id="sheet"><div>
-  <h3>Nova rola?</h3>
-  <p>Slike iz ove role biće obrisane iz aplikacije. One koje si već sačuvao ostaju u galeriji i na Drive-u.</p>
-  <div class="row"><button class="btn" id="shNo">Otkaži</button><button class="btn main" id="shYes">Ubaci novu</button></div>
+  <h3>New roll?</h3>
+  <p>Photos from this roll will be removed from the app. Anything you already saved stays in your gallery and on Drive.</p>
+  <div class="row"><button class="btn" id="shNo">Cancel</button><button class="btn main" id="shYes">Load new</button></div>
 </div></div>
 
 <input type="file" id="fCap" accept="image/*" capture="environment">
@@ -203,16 +203,16 @@
 <script>
 /* ================= FILMOVI ================= */
 const FILMS = [
-  { id:"portra800", name:"Portra 800", short:["Portra","800"], info:"NOĆ",
+  { id:"portra800", name:"Portra 800", short:["Portra","800"], info:"NIGHT",
     exposure:1.0, contrast:.30, fade:.025, roll:.80, warm:.10, tint:-.01,
     shadows:[-.025,.012,.008], highlights:[.04,.025,-.07], sat:.98, grain:.085, halation:.32, vignette:.30 },
-  { id:"portra400", name:"Portra 400", short:["Portra","400"], info:"DAN",
+  { id:"portra400", name:"Portra 400", short:["Portra","400"], info:"DAY",
     exposure:1.13, contrast:.07, fade:.06, roll:.78, warm:.035, tint:-.015,
     shadows:[0,.012,.012], highlights:[.025,.012,-.05], sat:.80, grain:.04, halation:.04, vignette:.10 },
-  { id:"hp5", name:"HP5", short:["HP","5"], info:"CRNO-BELO",
+  { id:"hp5", name:"HP5", short:["HP","5"], info:"B&W",
     exposure:1.02, contrast:.46, fade:.025, roll:.86, warm:0, tint:0,
     shadows:[0,0,0], highlights:[0,0,0], sat:0, bw:true, grain:.15, halation:0, vignette:.26 },
-  { id:"gold200", name:"Gold 200", short:["Gold","200"], info:"ZLATNO",
+  { id:"gold200", name:"Gold 200", short:["Gold","200"], info:"GOLDEN",
     exposure:1.04, contrast:.24, fade:.085, roll:.84, warm:.15, tint:-.005,
     shadows:[-.015,.012,.025], highlights:[.025,.02,-.04], sat:.98, grain:.065, halation:.10, vignette:.30 },
 ];
@@ -220,7 +220,7 @@ const ROLL = 27;
 
 const $ = id => document.getElementById(id);
 const video = $("video"), preview = $("preview");
-const pctx = preview.getContext("2d", {willReadFrequently:true});
+let pctx = null; // 2D rezerva ako WebGL ne radi
 let film = FILMS[1], LUT, stream = null, track = null, facing = "environment", live = false, raf = 0;
 let zoom = 1, hwZoom = false, torchOK = false, torchOn = false, flashOK = false, flashOn = false, imageCapture = null;
 const opts = { date:false, frame:false };
@@ -318,12 +318,90 @@ function filmFrame(src, no){
   tri(m/2, m*1.3); tri(m/2, c.height - m*1.3);
   return c;
 }
+
+/* ================= GPU (WebGL) — brz pregled i razvijanje ================= */
+const VS = "attribute vec2 p;varying vec2 v;void main(){v=p*.5+.5;gl_Position=vec4(p,0.,1.);}";
+const FS = `precision highp float;varying vec2 v;
+uniform sampler2D S,L;uniform vec4 C;uniform vec2 R;
+uniform float M,SAT,BW,G,GS,VG,SEED;
+float h(vec2 q){return fract(sin(dot(q,vec2(12.9898,78.233)))*43758.5453);}
+float lut(float x,int ch){vec4 t=texture2D(L,vec2((x*255.+.5)/256.,.5));return ch==0?t.r:(ch==1?t.g:t.b);}
+void main(){
+  vec2 uv=vec2(v.x,1.-v.y); if(M>.5) uv.x=1.-uv.x;
+  vec3 c=texture2D(S,C.xy+uv*C.zw).rgb, o;
+  if(BW>.5){ float y=dot(c,vec3(.30,.59,.11)); o=vec3(lut(y,0)); }
+  else { o=vec3(lut(c.r,0),lut(c.g,1),lut(c.b,2)); float l=dot(o,vec3(.299,.587,.114)); o=l+(o-l)*SAT; }
+  if(G>0.){ vec2 q=floor(gl_FragCoord.xy/GS); float n=h(q+SEED)+h(q+SEED+17.31)+h(q*1.37+SEED+3.7)-1.5;
+    float l=clamp(dot(o,vec3(.299,.587,.114)),0.,1.); o+=n*G*(.35+1.3*l*(1.-l)); }
+  if(VG>0.){ vec2 d=(v-.5)*R; float r0=min(R.x,R.y)*.35, r1=length(R)*.55; o*=1.-VG*clamp((length(d)-r0)/(r1-r0),0.,1.); }
+  gl_FragColor=vec4(clamp(o,0.,1.),1.);
+}`;
+function makeGL(canvas, keep){
+  const gl = canvas.getContext("webgl", {preserveDrawingBuffer: !!keep, antialias:false, alpha:false, premultipliedAlpha:false});
+  if (!gl) return null;
+  const sh = (t, src) => { const x = gl.createShader(t); gl.shaderSource(x, src); gl.compileShader(x); return gl.getShaderParameter(x, gl.COMPILE_STATUS) ? x : null; };
+  const vs = sh(gl.VERTEX_SHADER, VS), fs = sh(gl.FRAGMENT_SHADER, FS);
+  if (!vs || !fs) return null;
+  const pr = gl.createProgram(); gl.attachShader(pr, vs); gl.attachShader(pr, fs); gl.linkProgram(pr);
+  if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) return null;
+  gl.useProgram(pr);
+  const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const ap = gl.getAttribLocation(pr, "p"); gl.enableVertexAttribArray(ap); gl.vertexAttribPointer(ap, 2, gl.FLOAT, false, 0, 0);
+  const U = {}; ["S","L","C","R","M","SAT","BW","G","GS","VG","SEED"].forEach(n => U[n] = gl.getUniformLocation(pr, n));
+  const tex = unit => { const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, unit ? gl.NEAREST : gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, unit ? gl.NEAREST : gl.LINEAR); return t; };
+  const tSrc = tex(0), tLut = tex(1);
+  gl.uniform1i(U.S, 0); gl.uniform1i(U.L, 1);
+  const maxTex = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+  return {
+    maxTex,
+    setLUT(L){
+      const d = new Uint8Array(256*4);
+      for (let i = 0; i < 256; i++){ d[i*4] = L[0][i]; d[i*4+1] = L[1][i]; d[i*4+2] = L[2][i]; d[i*4+3] = 255; }
+      gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, tLut);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, d);
+    },
+    draw(src, o){
+      if (canvas.width !== o.w || canvas.height !== o.h){ canvas.width = o.w; canvas.height = o.h; }
+      gl.viewport(0, 0, o.w, o.h);
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tSrc);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src);
+      gl.uniform4f(U.C, o.crop[0], o.crop[1], o.crop[2], o.crop[3]);
+      gl.uniform2f(U.R, o.w, o.h);
+      gl.uniform1f(U.M, o.mirror ? 1 : 0); gl.uniform1f(U.SAT, o.film.sat); gl.uniform1f(U.BW, o.film.bw ? 1 : 0);
+      gl.uniform1f(U.G, o.grain); gl.uniform1f(U.GS, o.grainSize || 1); gl.uniform1f(U.VG, o.vig); gl.uniform1f(U.SEED, Math.random()*100);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+  };
+}
+let glPrev = null, glCap = null, glCapCanvas = null;
+function initGL(){
+  try{ glPrev = makeGL(preview, false); }catch(e){ glPrev = null; }
+  if (!glPrev) pctx = preview.getContext("2d", {willReadFrequently:true});
+  try{ glCapCanvas = document.createElement("canvas"); glCap = makeGL(glCapCanvas, true); }catch(e){ glCap = null; }
+  syncLUT();
+}
+function syncLUT(){ if (glPrev) glPrev.setLUT(LUT); if (glCap) glCap.setLUT(LUT); }
+
 function develop(src, sw, sh, no, fromCam){
   let sx = 0, sy = 0, cw = sw, ch = sh;
   if (fromCam && zoom === 2 && !hwZoom){ cw = sw/2; ch = sh/2; sx = sw/4; sy = sh/4; }
-  const k = Math.min(1, 4000 / Math.max(cw, ch)), w = Math.round(cw*k), h = Math.round(ch*k);
+  const lim = Math.min(4000, glCap ? glCap.maxTex : 4000);
+  const k = Math.min(1, lim / Math.max(cw, ch)), w = Math.round(cw*k), h = Math.round(ch*k);
   const c = document.createElement("canvas"); c.width = w; c.height = h;
   const ctx = c.getContext("2d", {willReadFrequently:true});
+  if (glCap){
+    try{
+      glCap.draw(src, { w, h, film, mirror: fromCam && facing === "user", vig: film.vignette,
+        crop: [sx/sw, sy/sh, cw/sw, ch/sh], grain: film.grain, grainSize: Math.max(1, w/2200) });
+      ctx.drawImage(glCapCanvas, 0, 0);
+      halation(ctx, w, h, film);
+      if (opts.date) dateStamp(ctx, w, h);
+      return opts.frame ? filmFrame(c, no) : c;
+    }catch(e){ /* pada na sporiji put */ }
+  }
   if (fromCam && facing === "user"){ ctx.translate(w, 0); ctx.scale(-1, 1); }
   ctx.drawImage(src, sx, sy, cw, ch, 0, 0, w, h);
   ctx.setTransform(1,0,0,1,0,0);
@@ -370,6 +448,13 @@ function loop(){
   if (video.readyState >= 2 && video.videoWidth){
     let vw = video.videoWidth, vh = video.videoHeight, sx = 0, sy = 0;
     if (zoom === 2 && !hwZoom){ sx = vw/4; sy = vh/4; vw /= 2; vh /= 2; }
+    if (glPrev){
+      const W = video.videoWidth, H = video.videoHeight;
+      const k = Math.min(1, 1440 / Math.max(vw, vh));
+      glPrev.draw(video, { w: Math.round(vw*k), h: Math.round(vh*k), film, mirror: facing === "user", vig: film.vignette,
+        crop: [sx/W, sy/H, vw/W, vh/H], grain: film.grain * .8, grainSize: 1 });
+      raf = requestAnimationFrame(loop); return;
+    }
     const k = 720 / Math.max(vw, vh), w = Math.round(vw*k), h = Math.round(vh*k);
     if (preview.width !== w || preview.height !== h){ preview.width = w; preview.height = h; }
     pctx.save();
@@ -388,8 +473,8 @@ function stopLoop(){ live = false; cancelAnimationFrame(raf); }
 async function startCamera(){
   stopCamera();
   if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia){
-    toast(window.isSecureContext ? "Ovaj pregledač ne daje kameru. Otvori link u Chrome-u ili Safari-ju."
-                                 : "Kamera radi samo preko https linka, ne iz fajla.");
+    toast(window.isSecureContext ? "This browser blocks the camera. Open the link in Chrome or Safari."
+                                 : "The camera only works over an https link, not from a file.");
     return;
   }
   try{
@@ -415,7 +500,7 @@ async function startCamera(){
     $("ovStart").style.display = "none"; $("zoom").hidden = false;
     store.set("fk_cam", true);
     live = true; loop(); updateCounter();
-  }catch(e){ toast("Kamera nije dozvoljena. Dozvoli je u podešavanjima pregledača."); }
+  }catch(e){ toast("Camera access is off. Allow it in settings."); }
 }
 function stopCamera(){
   stopLoop();
@@ -429,7 +514,7 @@ async function setZoom(z){
 document.querySelectorAll("#zoom button").forEach(b => b.onclick = () => setZoom(+b.dataset.z));
 $("bFlash").onclick = async () => {
   if (!track) return;
-  if (flashOK){ flashOn = !flashOn; $("bFlash").setAttribute("aria-pressed", flashOn); toast(flashOn ? "Blic uključen" : "Blic isključen"); return; }
+  if (flashOK){ flashOn = !flashOn; $("bFlash").setAttribute("aria-pressed", flashOn); toast(flashOn ? "Flash on" : "Flash off"); return; }
   if (!torchOK) return;
   torchOn = !torchOn;
   try{ await track.applyConstraints({advanced:[{torch:torchOn}]}); }catch(e){ torchOn = false; }
@@ -438,7 +523,7 @@ $("bFlash").onclick = async () => {
 
 /* ================= OKIDANJE ================= */
 const pad = n => String(n).padStart(2, "0");
-function fileName(film_id, t){ const d = new Date(t); return `FILM_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}_${film_id}.jpg`; }
+function fileName(film_id, t){ const d = new Date(t); return `ROLL_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}_${film_id}.jpg`; }
 let current = null; // {id, blob, film, no, t}
 
 async function commit(canvas, no){
@@ -460,7 +545,7 @@ function showPhoto(node, rec, animate){
   const box = $("photo"); box.innerHTML = "";
   if (animate) node.classList.add("dev");
   box.appendChild(node);
-  if (animate){ const l = document.createElement("div"); l.className = "devl"; l.textContent = "razvija se…"; box.appendChild(l); }
+  if (animate){ const l = document.createElement("div"); l.className = "devl"; l.textContent = "developing…"; box.appendChild(l); }
   const f = FILMS.find(x => x.id === rec.film) || film;
   $("pTitle").innerHTML = `${f.short[0]} <i>${f.short[1]}</i>`;
   $("pNo").textContent = rec.no;
@@ -533,45 +618,45 @@ function toB64(blob){ return new Promise(res => { const r = new FileReader(); r.
 function asFile(rec){ return new File([rec.blob], fileName(rec.film, rec.t), {type:"image/jpeg"}); }
 
 $("bSave").onclick = async () => {
-  if (!current || !current.blob){ toast("Slika se još razvija…"); return; }
+  if (!current || !current.blob){ toast("Still developing…"); return; }
   if (NATIVE){
     const ok = NATIVE.saveImage(await toB64(current.blob), fileName(current.film, current.t));
-    toast(ok ? "Sačuvano u galeriju · Film Kamera" : "Čuvanje nije uspelo. Pokušaj ponovo.");
+    toast(ok ? "Saved to gallery · Roll" : "Couldn’t save. Try again.");
     return;
   }
-  if (isIOS){ if (!(await shareFiles([asFile(current)], "Izaberi „Sačuvaj sliku“"))) download(current.blob, fileName(current.film, current.t)); }
-  else { download(current.blob, fileName(current.film, current.t)); toast("Sačuvano u galeriju."); }
+  if (isIOS){ if (!(await shareFiles([asFile(current)], "Choose “Save Image”"))) download(current.blob, fileName(current.film, current.t)); }
+  else { download(current.blob, fileName(current.film, current.t)); toast("Saved to gallery."); }
 };
 $("bDrive").onclick = async () => {
-  if (!current || !current.blob){ toast("Slika se još razvija…"); return; }
+  if (!current || !current.blob){ toast("Still developing…"); return; }
   if (NATIVE){
-    if (!NATIVE.hasDrive()) toast("Google Drive nije instaliran — biraj gde da pošalješ.");
-    if (!NATIVE.shareImage(await toB64(current.blob), fileName(current.film, current.t), true)) toast("Slanje nije uspelo.");
+    if (!NATIVE.hasDrive()) toast("Google Drive isn’t installed — pick where to send it.");
+    if (!NATIVE.shareImage(await toB64(current.blob), fileName(current.film, current.t), true)) toast("Couldn’t send.");
     return;
   }
-  if (!(await shareFiles([asFile(current)], "Izaberi Google Drive")))
-    toast("Deljenje ovde nije podržano — sačuvaj pa otpremi na Drive.");
+  if (!(await shareFiles([asFile(current)], "Choose Google Drive")))
+    toast("Sharing isn’t supported here — save it, then upload to Drive.");
 };
 $("bDel").onclick = async () => {
   if (current && current.id != null){ await dbDel(current.id); }
   const all = await dbAll(); setThumb(all.length ? all[all.length-1].blob : null);
-  toast("Obrisano iz role."); back();
+  toast("Deleted from roll."); back();
 };
 $("bSaveAll").onclick = async () => {
   const all = await dbAll();
-  if (!all.length){ toast("Rola je prazna."); return; }
+  if (!all.length){ toast("Your roll is empty."); return; }
   if (NATIVE){
     let n = 0;
     for (const r of all){ if (NATIVE.saveImage(await toB64(r.blob), fileName(r.film, r.t))) n++; }
-    toast(n === all.length ? `Sačuvano ${n} slika u galeriju.` : `Sačuvano ${n} od ${all.length} slika.`);
+    toast(n === all.length ? `Saved ${n} photos to gallery.` : `Saved ${n} of ${all.length} photos.`);
     return;
   }
   const files = all.map(asFile);
   if (isIOS || (navigator.canShare && navigator.canShare({files}))){
-    if (await shareFiles(files, isIOS ? "Izaberi „Sačuvaj slike“" : "Izaberi gde da sačuvaš")) return;
+    if (await shareFiles(files, isIOS ? "Choose “Save Images”" : "Choose where to save")) return;
   }
   all.forEach((r, i) => setTimeout(() => download(r.blob, fileName(r.film, r.t)), i * 350));
-  toast(`Čuvam ${all.length} slika…`);
+  toast(`Saving ${all.length} photos…`);
 };
 
 /* ================= ROLA EKRAN ================= */
@@ -579,7 +664,7 @@ let gridURLs = [];
 async function renderGrid(){
   gridURLs.forEach(u => URL.revokeObjectURL(u)); gridURLs = [];
   const all = await dbAll(), g = $("grid"); g.innerHTML = "";
-  if (!all.length){ g.innerHTML = `<div class="emptyg"><b>Prazna rola</b>Slike koje napraviš pojaviće se ovde.</div>`; return; }
+  if (!all.length){ g.innerHTML = `<div class="emptyg"><b>Empty roll</b>Photos you take will show up here.</div>`; return; }
   all.slice().reverse().forEach(r => {
     const u = URL.createObjectURL(r.blob); gridURLs.push(u);
     const b = document.createElement("button"); b.style.backgroundImage = `url(${u})`;
@@ -592,7 +677,7 @@ $("shNo").onclick = () => $("sheet").classList.remove("on");
 $("shYes").onclick = async () => {
   $("sheet").classList.remove("on");
   await dbClear(); used = 0; store.set("fk_used", 0); setThumb(null);
-  toast("Nova rola od 27 snimaka."); go("sCam");
+  toast("New roll loaded · 27 shots."); go("sCam");
 };
 $("bNew1").onclick = askNewRoll; $("bNew2").onclick = askNewRoll;
 $("bSee").onclick = () => go("sRoll");
@@ -641,7 +726,7 @@ function renderStyles(){
       let best = 0, bd = 1e9;
       [...box.children].forEach((c, i) => { const d = Math.abs(c.offsetLeft + c.offsetWidth/2 - mid); if (d < bd){ bd = d; best = i; } });
       if (FILMS[best] !== film){
-        film = FILMS[best]; LUT = buildLUT(film); store.set("fk_film", film.id);
+        film = FILMS[best]; LUT = buildLUT(film); syncLUT(); store.set("fk_film", film.id);
         [...box.children].forEach((c, i) => c.classList.toggle("on", i === best));
         if (navigator.vibrate) navigator.vibrate(8);
       }
@@ -657,6 +742,7 @@ function bindOpt(id, key){
 (async function init(){
   Object.assign(opts, store.get("fk_opts", {}));
   film = FILMS.find(f => f.id === store.get("fk_film", "portra400")) || FILMS[1]; LUT = buildLUT(film);
+  initGL();
   $("stamp").textContent = dateText(); $("stamp").classList.toggle("on", opts.date);
   bindOpt("oDate", "date"); bindOpt("oFrame", "frame");
   renderStyles();

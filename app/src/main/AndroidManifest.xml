@@ -15,7 +15,8 @@
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
-        android:label="Film Kamera"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="Roll"
         android:hardwareAccelerated="true"
         android:theme="@android:style/Theme.Material.NoActionBar">
 
