@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Film Kamera">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<title>Film Kamera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#000; --s1:#121212; --s2:#1c1c1c; --line:#2a2a2a; --ink:#fff; --mute:#8a8a8a; --orange:#f39a2b; }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;overflow:hidden;overscroll-behavior:none}
+  button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+  .serif{font-family:"Instrument Serif",Georgia,serif;font-weight:400}
+  .screen{position:fixed;inset:0;display:none;flex-direction:column;
+    padding:calc(env(safe-area-inset-top) + 8px) 0 calc(env(safe-area-inset-bottom) + 10px)}
+  .screen.on{display:flex}
+
+  /* ---------- kamera ---------- */
+  .top{display:flex;align-items:center;justify-content:space-between;padding:4px 18px 12px;height:58px}
+  .circ{width:42px;height:42px;border-radius:50%;background:var(--s2);display:flex;align-items:center;justify-content:center}
+  .circ svg{width:20px;height:20px}
+  .circ[aria-pressed="true"]{background:#fff;color:#000}
+  .circ.ghost{visibility:hidden}
+  .counter{text-align:center;line-height:1}
+  .counter b{display:block;font-family:"Instrument Serif",serif;font-weight:400;font-size:34px}
+  .counter span{font-size:10px;letter-spacing:.16em;color:var(--mute)}
+  .vf{flex:1;min-height:0;position:relative;margin:0 12px;border-radius:26px;overflow:hidden;background:var(--s1)}
+  .vf canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  #video{display:none}
+  .stamp{position:absolute;right:16px;bottom:16px;font-family:"Space Mono",monospace;font-size:13px;color:var(--orange);
+    text-shadow:0 0 8px rgba(243,154,43,.7);display:none}
+  .stamp.on{display:block}
+  .zoom{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:4px;padding:4px;border-radius:30px;
+    background:rgba(0,0,0,.5);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  .zoom button{width:36px;height:36px;border-radius:50%;font-size:12px;font-weight:600;color:#ddd}
+  .zoom button[aria-pressed="true"]{background:rgba(255,255,255,.18);color:var(--orange)}
+  .overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:30px;background:var(--s1)}
+  .overlay h2{margin:0;font-family:"Instrument Serif",serif;font-weight:400;font-size:38px;line-height:1.05}
+  .overlay h2 i{color:var(--mute)}
+  .overlay p{margin:0;color:var(--mute);font-size:14px;line-height:1.5;max-width:270px}
+  .wbtn{background:#fff;color:#000;border-radius:30px;padding:14px 26px;font-weight:600;font-size:15px}
+  .tlink{color:var(--mute);font-size:13px;text-decoration:underline}
+
+  .styles{position:relative;height:54px;margin-top:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;
+    display:flex;align-items:center;padding:0 calc(50% - 60px)}
+  .styles::-webkit-scrollbar{display:none}
+  .style{flex:0 0 120px;scroll-snap-align:center;text-align:center;font-family:"Instrument Serif",serif;font-size:22px;color:#555;transition:color .2s,transform .2s}
+  .style.on{color:#fff;transform:scale(1.08)}
+  .style small{display:block;font-family:Inter,sans-serif;font-size:10px;letter-spacing:.12em;color:var(--orange);opacity:0;transition:opacity .2s}
+  .style.on small{opacity:1}
+
+  .bottom{display:flex;align-items:center;justify-content:space-between;padding:8px 30px 4px}
+  .thumb{width:46px;height:46px;border-radius:12px;background:var(--s2) center/cover;border:1.5px solid #333}
+  .shutter{width:80px;height:80px;border-radius:50%;border:3px solid #fff;padding:5px}
+  .shutter span{display:block;width:100%;height:100%;border-radius:50%;background:#fff;transition:transform .08s}
+  .shutter:active span{transform:scale(.86)}
+  .shutter:disabled{opacity:.25}
+  .opts{display:flex;justify-content:center;gap:8px;padding-top:6px}
+  .chip{font-size:12px;color:var(--mute);border:1px solid var(--line);border-radius:20px;padding:6px 13px}
+  .chip[aria-pressed="true"]{color:#000;background:#fff;border-color:#fff}
+
+  /* ---------- fotografija ---------- */
+  .head{display:flex;align-items:center;justify-content:space-between;padding:4px 18px 12px;height:58px}
+  .head h1{margin:0;font-family:"Instrument Serif",serif;font-weight:400;font-size:28px}
+  .head h1 i{color:var(--mute)}
+  .photo{flex:1;min-height:0;position:relative;margin:0 12px;border-radius:26px;overflow:hidden;background:var(--s1)}
+  .photo canvas,.photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+  .photo .dev{animation:dev 2.4s ease-out forwards}
+  @keyframes dev{0%{filter:brightness(.05) sepia(1) blur(8px);opacity:.3}55%{filter:brightness(.7) sepia(.4) blur(1px);opacity:1}100%{filter:none}}
+  .devl{position:absolute;inset:auto 0 18px;text-align:center;font-family:"Instrument Serif",serif;font-style:italic;font-size:20px;opacity:0;animation:lbl 2.4s ease forwards}
+  @keyframes lbl{0%,10%{opacity:0}25%,70%{opacity:.9}100%{opacity:0}}
+  .actions{display:flex;flex-direction:column;gap:8px;padding:14px 12px 0}
+  .row{display:flex;gap:8px}
+  .btn{flex:1;border-radius:18px;padding:16px 10px;font-weight:600;font-size:15px;background:var(--s2)}
+  .btn.main{background:#fff;color:#000}
+  .btn.red{color:#ff5b4f}
+
+  /* ---------- rola (galerija) ---------- */
+  .grid{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:0 3px;align-content:start}
+  .grid button{aspect-ratio:3/4;background:var(--s2) center/cover}
+  .emptyg{grid-column:1/-1;text-align:center;color:var(--mute);padding:60px 30px;font-size:14px;line-height:1.5}
+  .emptyg b{display:block;font-family:"Instrument Serif",serif;font-weight:400;font-size:30px;color:#fff;margin-bottom:6px}
+  .foot{padding:12px 12px 0}
+
+  .toast{position:fixed;left:50%;bottom:calc(30px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#fff;color:#000;
+    padding:11px 16px;border-radius:16px;font-size:13px;font-weight:500;opacity:0;transition:opacity .2s;pointer-events:none;max-width:88%;text-align:center;z-index:9}
+  .toast.on{opacity:1}
+  .flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .35s;z-index:8}
+  .flash.on{opacity:.95;transition:none}
+  .sheet{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:flex-end;z-index:7}
+  .sheet.on{display:flex}
+  .sheet > div{width:100%;background:var(--s1);border-radius:26px 26px 0 0;padding:24px 18px calc(env(safe-area-inset-bottom) + 18px)}
+  .sheet h3{margin:0 0 6px;font-family:"Instrument Serif",serif;font-weight:400;font-size:28px}
+  .sheet p{margin:0 0 16px;color:var(--mute);font-size:14px;line-height:1.5}
+  input[type=file]{display:none}
+</style>
+</head>
+<body>
+
+<!-- ============ KAMERA ============ -->
+<section class="screen on" id="sCam">
+  <div class="top">
+    <button class="circ ghost" id="bFlash" aria-label="Blic" aria-pressed="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
+    </button>
+    <div class="counter"><b id="left">27</b><span>SNIMAKA</span></div>
+    <button class="circ" id="bRoll" aria-label="Rola">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>
+    </button>
+  </div>
+
+  <div class="vf">
+    <video id="video" playsinline muted autoplay></video>
+    <canvas id="preview"></canvas>
+    <div class="stamp" id="stamp"></div>
+    <div class="zoom" id="zoom" hidden>
+      <button data-z="1" aria-pressed="true">1×</button>
+      <button data-z="2" aria-pressed="false">2×</button>
+    </div>
+    <div class="overlay" id="ovStart">
+      <h2>Jedna rola.<br><i>27 snimaka.</i></h2>
+      <p>Svaka slika se razvija samo na tvom telefonu. Ništa ne ide na tuđi server.</p>
+      <button class="wbtn" id="bStart">Pokreni kameru</button>
+      <button class="tlink" id="bNative">ili koristi kameru telefona</button>
+    </div>
+    <div class="overlay" id="ovDone" style="display:none">
+      <h2>Rola je<br><i>gotova.</i></h2>
+      <p>Iskoristio si svih 27 snimaka. Pogledaj rolu ili ubaci novu.</p>
+      <button class="wbtn" id="bNew1">Ubaci novu rolu</button>
+      <button class="tlink" id="bSee">Pogledaj rolu</button>
+    </div>
+  </div>
+
+  <div class="styles" id="styles"></div>
+
+  <div class="bottom">
+    <button class="circ" id="bFlip" aria-label="Promeni kameru">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 9a8 8 0 0 1 14-3l2 2M20 15a8 8 0 0 1-14 3l-2-2"/><path d="M20 4v4h-4M4 20v-4h4"/></svg>
+    </button>
+    <button class="shutter" id="bShutter" aria-label="Slikaj"><span></span></button>
+    <button class="thumb" id="bThumb" aria-label="Poslednja slika"></button>
+  </div>
+  <div class="opts">
+    <button class="chip" id="oDate" aria-pressed="false">Datum</button>
+    <button class="chip" id="oFrame" aria-pressed="false">Okvir filma</button>
+  </div>
+</section>
+
+<!-- ============ FOTOGRAFIJA ============ -->
+<section class="screen" id="sPhoto">
+  <div class="head">
+    <button class="circ" id="bPhotoBack" aria-label="Nazad">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h1 id="pTitle">Portra <i>400</i></h1>
+    <div class="counter"><b id="pNo" style="font-size:26px">1</b><span>SNIMAK</span></div>
+  </div>
+  <div class="photo" id="photo"></div>
+  <div class="actions">
+    <button class="btn main" id="bSave">Sačuvaj u galeriju</button>
+    <div class="row">
+      <button class="btn" id="bDrive">Google Drive</button>
+      <button class="btn red" id="bDel">Obriši</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ROLA ============ -->
+<section class="screen" id="sRoll">
+  <div class="head">
+    <button class="circ" id="bRollBack" aria-label="Nazad">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h1>Moja <i>rola</i></h1>
+    <div class="circ ghost"></div>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="foot row">
+    <button class="btn" id="bSaveAll">Sačuvaj sve</button>
+    <button class="btn" id="bNew2">Nova rola</button>
+  </div>
+</section>
+
+<div class="sheet" id="sheet"><div>
+  <h3>Nova rola?</h3>
+  <p>Slike iz ove role biće obrisane iz aplikacije. One koje si već sačuvao ostaju u galeriji i na Drive-u.</p>
+  <div class="row"><button class="btn" id="shNo">Otkaži</button><button class="btn main" id="shYes">Ubaci novu</button></div>
+</div></div>
+
+<input type="file" id="fCap" accept="image/*" capture="environment">
+<div class="flash" id="flash"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= FILMOVI ================= */
+const FILMS = [
+  { id:"portra800", name:"Portra 800", short:["Portra","800"], info:"NOĆ",
+    exposure:1.0, contrast:.30, fade:.025, roll:.80, warm:.10, tint:-.01,
+    shadows:[-.025,.012,.008], highlights:[.04,.025,-.07], sat:.98, grain:.085, halation:.32, vignette:.30 },
+  { id:"portra400", name:"Portra 400", short:["Portra","400"], info:"DAN",
+    exposure:1.13, contrast:.07, fade:.06, roll:.78, warm:.035, tint:-.015,
+    shadows:[0,.012,.012], highlights:[.025,.012,-.05], sat:.80, grain:.04, halation:.04, vignette:.10 },
+  { id:"hp5", name:"HP5", short:["HP","5"], info:"CRNO-BELO",
+    exposure:1.02, contrast:.46, fade:.025, roll:.86, warm:0, tint:0,
+    shadows:[0,0,0], highlights:[0,0,0], sat:0, bw:true, grain:.15, halation:0, vignette:.26 },
+  { id:"gold200", name:"Gold 200", short:["Gold","200"], info:"ZLATNO",
+    exposure:1.04, contrast:.24, fade:.085, roll:.84, warm:.15, tint:-.005,
+    shadows:[-.015,.012,.025], highlights:[.025,.02,-.04], sat:.98, grain:.065, halation:.10, vignette:.30 },
+];
+const ROLL = 27;
+
+const $ = id => document.getElementById(id);
+const video = $("video"), preview = $("preview");
+const pctx = preview.getContext("2d", {willReadFrequently:true});
+let film = FILMS[1], LUT, stream = null, track = null, facing = "environment", live = false, raf = 0;
+let zoom = 1, hwZoom = false, torchOK = false, torchOn = false, flashOK = false, flashOn = false, imageCapture = null;
+const opts = { date:false, frame:false };
+const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const store = { get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
+                set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} } };
+
+/* ================= OBRADA ================= */
+const c01 = x => x < 0 ? 0 : x > 1 ? 1 : x;
+function buildLUT(s){
+  const L = [new Uint8ClampedArray(256), new Uint8ClampedArray(256), new Uint8ClampedArray(256)];
+  const cw = [s.warm + s.tint*.5, -s.tint, -s.warm + s.tint*.5];
+  for (let v = 0; v < 256; v++){
+    let x = (v/255) * s.exposure;
+    if (x > s.roll){ const k = s.roll, r = 1 - k; x = k + r * (1 - Math.exp(-(x - k) / r)); }
+    x = c01(x);
+    const sc = x*x*(3 - 2*x);
+    x = c01(x + (sc - x) * s.contrast * 2);
+    for (let c = 0; c < 3; c++){
+      let y = x + s.shadows[c]*(1-x)*(1-x) + s.highlights[c]*x*x + cw[c]*x*(1-x)*1.6;
+      y = s.fade + c01(y) * (1 - s.fade*1.35);
+      L[c][v] = Math.round(c01(y) * 255);
+    }
+  }
+  return L;
+}
+LUT = buildLUT(film);
+
+function pixels(img, s, grainScale){
+  const d = img.data, R = LUT[0], G = LUT[1], B = LUT[2], sat = s.sat, bw = !!s.bw;
+  const gA = grainScale ? s.grain * 255 * grainScale : 0;
+  for (let i = 0; i < d.length; i += 4){
+    let r = d[i], g = d[i+1], b = d[i+2];
+    if (bw){ r = g = b = R[(0.30*r + 0.59*g + 0.11*b) | 0]; }
+    else {
+      r = R[r]; g = G[g]; b = B[b];
+      const l = 0.299*r + 0.587*g + 0.114*b;
+      r = l + (r-l)*sat; g = l + (g-l)*sat; b = l + (b-l)*sat;
+    }
+    if (gA){
+      const l = (0.299*r + 0.587*g + 0.114*b) / 255;
+      const n = (Math.random() + Math.random() + Math.random() - 1.5) * gA * (0.35 + 1.3*l*(1-l));
+      r += n; g += n; b += n;
+    }
+    d[i] = r; d[i+1] = g; d[i+2] = b;
+  }
+}
+function halation(ctx, w, h, s){
+  if (!s.halation) return;
+  const sw = Math.max(16, w/10|0), sh = Math.max(16, h/10|0);
+  const c = document.createElement("canvas"); c.width = sw; c.height = sh;
+  const x = c.getContext("2d", {willReadFrequently:true});
+  x.drawImage(ctx.canvas, 0, 0, sw, sh);
+  const im = x.getImageData(0, 0, sw, sh), d = im.data;
+  for (let i = 0; i < d.length; i += 4){
+    const l = (0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2]) / 255, m = Math.max(0, (l - .72) / .28);
+    d[i] = 255*m; d[i+1] = 70*m; d[i+2] = 25*m; d[i+3] = 255;
+  }
+  x.putImageData(im, 0, 0);
+  const c2 = document.createElement("canvas"); c2.width = Math.max(4, sw>>2); c2.height = Math.max(4, sh>>2);
+  const x2 = c2.getContext("2d"); x2.imageSmoothingQuality = "high"; x2.drawImage(c, 0, 0, c2.width, c2.height);
+  x.clearRect(0, 0, sw, sh); x.imageSmoothingQuality = "high"; x.drawImage(c2, 0, 0, sw, sh);
+  ctx.save(); ctx.globalCompositeOperation = "screen"; ctx.globalAlpha = s.halation;
+  ctx.imageSmoothingQuality = "high"; ctx.drawImage(c, 0, 0, w, h); ctx.restore();
+}
+function vignette(ctx, w, h, a){
+  if (!a) return;
+  const g = ctx.createRadialGradient(w/2, h/2, Math.min(w,h)*.35, w/2, h/2, Math.hypot(w,h)*.55);
+  g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, `rgba(0,0,0,${a})`);
+  ctx.save(); ctx.globalCompositeOperation = "multiply"; ctx.fillStyle = g; ctx.fillRect(0,0,w,h); ctx.restore();
+}
+function dateText(){ const d = new Date(); return `'${String(d.getFullYear()).slice(2)}  ${d.getMonth()+1}  ${d.getDate()}`; }
+function dateStamp(ctx, w, h){
+  const fs = Math.round(Math.min(w,h) * .045);
+  ctx.save(); ctx.font = `700 ${fs}px "Space Mono", monospace`; ctx.textAlign = "right"; ctx.textBaseline = "bottom";
+  ctx.shadowColor = "rgba(255,120,20,.9)"; ctx.shadowBlur = fs*.5; ctx.fillStyle = "rgba(255,150,40,.92)";
+  ctx.fillText(dateText(), w - fs*1.4, h - fs*1.1); ctx.restore();
+}
+function filmFrame(src, no){
+  const w = src.width, h = src.height, m = Math.round(Math.min(w,h) * .075);
+  const c = document.createElement("canvas"); c.width = w + m*2; c.height = h + m*2;
+  const x = c.getContext("2d");
+  x.fillStyle = "#121110"; x.fillRect(0, 0, c.width, c.height);
+  const r = Math.round(Math.min(w,h) * .025);
+  x.save(); x.beginPath(); if (x.roundRect) x.roundRect(m, m, w, h, r); else x.rect(m, m, w, h);
+  x.clip(); x.drawImage(src, m, m); x.restore();
+  const fs = Math.round(m * .34), N = film.name.toUpperCase();
+  x.fillStyle = "#e8a33d"; x.font = `700 ${fs}px "Space Mono", monospace`; x.textBaseline = "middle"; x.textAlign = "center";
+  const vtext = (t, cx, cy, a) => { x.save(); x.translate(cx, cy); x.rotate(a); x.fillText(t, 0, 0); x.restore(); };
+  vtext(N, c.width - m/2, c.height/2, Math.PI/2);
+  vtext(String(no), c.width - m/2, m*1.6, Math.PI/2);
+  vtext(N, c.width - m/2, c.height - m*1.6, Math.PI/2);
+  vtext(`${no}A`, m/2, c.height/2, -Math.PI/2);
+  const tri = (cx, cy) => { const s = fs*.55; x.beginPath(); x.moveTo(cx - s*.6, cy - s); x.lineTo(cx + s*.6, cy); x.lineTo(cx - s*.6, cy + s); x.fill(); };
+  tri(m/2, m*1.3); tri(m/2, c.height - m*1.3);
+  return c;
+}
+function develop(src, sw, sh, no, fromCam){
+  let sx = 0, sy = 0, cw = sw, ch = sh;
+  if (fromCam && zoom === 2 && !hwZoom){ cw = sw/2; ch = sh/2; sx = sw/4; sy = sh/4; }
+  const k = Math.min(1, 4000 / Math.max(cw, ch)), w = Math.round(cw*k), h = Math.round(ch*k);
+  const c = document.createElement("canvas"); c.width = w; c.height = h;
+  const ctx = c.getContext("2d", {willReadFrequently:true});
+  if (fromCam && facing === "user"){ ctx.translate(w, 0); ctx.scale(-1, 1); }
+  ctx.drawImage(src, sx, sy, cw, ch, 0, 0, w, h);
+  ctx.setTransform(1,0,0,1,0,0);
+  const img = ctx.getImageData(0, 0, w, h);
+  pixels(img, film, Math.max(1, w/1600));
+  ctx.putImageData(img, 0, 0);
+  halation(ctx, w, h, film);
+  vignette(ctx, w, h, film.vignette);
+  if (opts.date) dateStamp(ctx, w, h);
+  return opts.frame ? filmFrame(c, no) : c;
+}
+
+/* ================= ROLA (čuva se samo na telefonu, IndexedDB) ================= */
+let db = null;
+function openDB(){
+  return new Promise(res => {
+    try{
+      const r = indexedDB.open("filmkamera", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("shots", {keyPath:"id", autoIncrement:true});
+      r.onsuccess = () => { db = r.result; res(); };
+      r.onerror = () => res();
+    }catch(e){ res(); }
+  });
+}
+function tx(mode){ return db.transaction("shots", mode).objectStore("shots"); }
+function dbAll(){ return new Promise(res => { if (!db) return res([]); const q = tx("readonly").getAll(); q.onsuccess = () => res(q.result || []); q.onerror = () => res([]); }); }
+function dbAdd(rec){ return new Promise(res => { if (!db) return res(null); const q = tx("readwrite").add(rec); q.onsuccess = () => res(q.result); q.onerror = () => res(null); }); }
+function dbDel(id){ return new Promise(res => { if (!db) return res(); const q = tx("readwrite").delete(id); q.onsuccess = q.onerror = () => res(); }); }
+function dbClear(){ return new Promise(res => { if (!db) return res(); const q = tx("readwrite").clear(); q.onsuccess = q.onerror = () => res(); }); }
+
+let used = store.get("fk_used", 0);   // koliko je snimaka iskorišćeno u roli
+function updateCounter(){
+  const left = Math.max(0, ROLL - used);
+  $("left").textContent = left;
+  const done = left === 0;
+  $("bShutter").disabled = done;
+  $("ovDone").style.display = done ? "flex" : "none";
+  if (done) stopLoop(); else if (stream && !live && $("sCam").classList.contains("on")) { live = true; loop(); }
+}
+
+/* ================= ŽIVI PREGLED ================= */
+function loop(){
+  if (!live) return;
+  if (video.readyState >= 2 && video.videoWidth){
+    let vw = video.videoWidth, vh = video.videoHeight, sx = 0, sy = 0;
+    if (zoom === 2 && !hwZoom){ sx = vw/4; sy = vh/4; vw /= 2; vh /= 2; }
+    const k = 720 / Math.max(vw, vh), w = Math.round(vw*k), h = Math.round(vh*k);
+    if (preview.width !== w || preview.height !== h){ preview.width = w; preview.height = h; }
+    pctx.save();
+    if (facing === "user"){ pctx.translate(w, 0); pctx.scale(-1, 1); }
+    pctx.drawImage(video, sx, sy, vw, vh, 0, 0, w, h);
+    pctx.restore();
+    const img = pctx.getImageData(0, 0, w, h);
+    pixels(img, film, 0);
+    pctx.putImageData(img, 0, 0);
+    vignette(pctx, w, h, film.vignette);
+  }
+  raf = requestAnimationFrame(loop);
+}
+function stopLoop(){ live = false; cancelAnimationFrame(raf); }
+
+async function startCamera(){
+  stopCamera();
+  if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia){
+    toast(window.isSecureContext ? "Ovaj pregledač ne daje kameru. Otvori link u Chrome-u ili Safari-ju."
+                                 : "Kamera radi samo preko https linka, ne iz fajla.");
+    return;
+  }
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({ audio:false,
+      video:{ facingMode: facing, width:{ideal:4032}, height:{ideal:3024} } });
+    video.srcObject = stream; await video.play();
+    track = stream.getVideoTracks()[0];
+    const cap = track.getCapabilities ? track.getCapabilities() : {};
+    hwZoom = !!(cap.zoom && cap.zoom.max >= 2);
+    torchOK = !!cap.torch;
+    // Pun kvalitet: Chrome na Androidu (npr. Galaxy S23) slika pravu fotografiju, ne kadar iz videa
+    imageCapture = null; flashOK = false; flashOn = false;
+    if ("ImageCapture" in window){
+      try{
+        imageCapture = new ImageCapture(track);
+        const pc = await imageCapture.getPhotoCapabilities();
+        flashOK = !!(pc.fillLightMode && pc.fillLightMode.includes("flash"));
+      }catch(e){}
+    }
+    $("bFlash").classList.toggle("ghost", !(torchOK || flashOK));
+    torchOn = false; $("bFlash").setAttribute("aria-pressed", "false");
+    await setZoom(zoom);
+    $("ovStart").style.display = "none"; $("zoom").hidden = false;
+    store.set("fk_cam", true);
+    live = true; loop(); updateCounter();
+  }catch(e){ toast("Kamera nije dozvoljena. Dozvoli je u podešavanjima pregledača."); }
+}
+function stopCamera(){
+  stopLoop();
+  if (stream){ stream.getTracks().forEach(t => t.stop()); stream = null; track = null; }
+}
+async function setZoom(z){
+  zoom = z;
+  document.querySelectorAll("#zoom button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.z === z));
+  if (hwZoom && track){ try{ await track.applyConstraints({advanced:[{zoom:z}]}); }catch(e){ hwZoom = false; } }
+}
+document.querySelectorAll("#zoom button").forEach(b => b.onclick = () => setZoom(+b.dataset.z));
+$("bFlash").onclick = async () => {
+  if (!track) return;
+  if (flashOK){ flashOn = !flashOn; $("bFlash").setAttribute("aria-pressed", flashOn); toast(flashOn ? "Blic uključen" : "Blic isključen"); return; }
+  if (!torchOK) return;
+  torchOn = !torchOn;
+  try{ await track.applyConstraints({advanced:[{torch:torchOn}]}); }catch(e){ torchOn = false; }
+  $("bFlash").setAttribute("aria-pressed", torchOn);
+};
+
+/* ================= OKIDANJE ================= */
+const pad = n => String(n).padStart(2, "0");
+function fileName(film_id, t){ const d = new Date(t); return `FILM_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}_${film_id}.jpg`; }
+let current = null; // {id, blob, film, no, t}
+
+async function commit(canvas, no){
+  const blob = await new Promise(r => canvas.toBlob(r, "image/jpeg", 0.92));
+  const rec = { blob, film: film.id, no, t: Date.now() };
+  rec.id = await dbAdd(rec);
+  current = rec;
+  setThumb(blob);
+}
+let thumbURL = "";
+function setThumb(blob){
+  if (thumbURL) URL.revokeObjectURL(thumbURL);
+  thumbURL = blob ? URL.createObjectURL(blob) : "";
+  $("bThumb").style.backgroundImage = thumbURL ? `url(${thumbURL})` : "";
+}
+
+function showPhoto(node, rec, animate){
+  stopLoop();
+  const box = $("photo"); box.innerHTML = "";
+  if (animate) node.classList.add("dev");
+  box.appendChild(node);
+  if (animate){ const l = document.createElement("div"); l.className = "devl"; l.textContent = "razvija se…"; box.appendChild(l); }
+  const f = FILMS.find(x => x.id === rec.film) || film;
+  $("pTitle").innerHTML = `${f.short[0]} <i>${f.short[1]}</i>`;
+  $("pNo").textContent = rec.no;
+  go("sPhoto");
+}
+
+async function grabFrame(){
+  const vw = video.videoWidth, vh = video.videoHeight;
+  if (imageCapture){
+    try{
+      const settings = flashOK && flashOn ? {fillLightMode:"flash"} : {};
+      const blob = await Promise.race([imageCapture.takePhoto(settings), new Promise((_, r) => setTimeout(() => r(0), 5000))]);
+      const bmp = await createImageBitmap(blob);
+      // koristi punu fotografiju samo ako je iste orijentacije kao pregled
+      if ((bmp.width > bmp.height) === (vw > vh)) return { src: bmp, w: bmp.width, h: bmp.height };
+      bmp.close && bmp.close();
+    }catch(e){}
+  }
+  return { src: video, w: vw, h: vh };
+}
+let busy = false;
+$("bShutter").onclick = async () => {
+  if (!stream){ startCamera(); return; }
+  if (used >= ROLL || busy) return;
+  busy = true;
+  const no = used + 1;
+  const fl = $("flash"); fl.classList.add("on"); setTimeout(() => fl.classList.remove("on"), 70);
+  if (navigator.vibrate) navigator.vibrate(15);
+  try{
+    const g = await grabFrame();
+    const c = develop(g.src, g.w, g.h, no, true);
+    if (g.src !== video && g.src.close) g.src.close();
+    used = no; store.set("fk_used", used);
+    current = { film: film.id, no, t: Date.now() };
+    showPhoto(c, current, true);
+    await commit(c, no);
+  } finally { busy = false; }
+};
+$("fCap").onchange = e => {
+  const file = e.target.files[0]; e.target.value = "";
+  if (!file || used >= ROLL) return;
+  const url = URL.createObjectURL(file), img = new Image();
+  img.onload = async () => {
+    const no = used + 1, c = develop(img, img.naturalWidth, img.naturalHeight, no);
+    used = no; store.set("fk_used", used); URL.revokeObjectURL(url);
+    current = { film: film.id, no, t: Date.now() };
+    showPhoto(c, current, true);
+    await commit(c, no); updateCounter();
+  };
+  img.src = url;
+};
+$("bNative").onclick = () => $("fCap").click();
+$("bStart").onclick = startCamera;
+$("bFlip").onclick = () => { facing = facing === "environment" ? "user" : "environment"; if (stream) startCamera(); };
+
+/* ================= ČUVANJE ================= */
+function download(blob, name){
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+async function shareFiles(files, hint){
+  if (navigator.canShare && navigator.canShare({files})){
+    try{ toast(hint); await navigator.share({files}); return true; }
+    catch(e){ return e.name === "AbortError"; }
+  }
+  return false;
+}
+const NATIVE = window.Native || null;
+function toB64(blob){ return new Promise(res => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.readAsDataURL(blob); }); }
+function asFile(rec){ return new File([rec.blob], fileName(rec.film, rec.t), {type:"image/jpeg"}); }
+
+$("bSave").onclick = async () => {
+  if (!current || !current.blob){ toast("Slika se još razvija…"); return; }
+  if (NATIVE){
+    const ok = NATIVE.saveImage(await toB64(current.blob), fileName(current.film, current.t));
+    toast(ok ? "Sačuvano u galeriju · Film Kamera" : "Čuvanje nije uspelo. Pokušaj ponovo.");
+    return;
+  }
+  if (isIOS){ if (!(await shareFiles([asFile(current)], "Izaberi „Sačuvaj sliku“"))) download(current.blob, fileName(current.film, current.t)); }
+  else { download(current.blob, fileName(current.film, current.t)); toast("Sačuvano u galeriju."); }
+};
+$("bDrive").onclick = async () => {
+  if (!current || !current.blob){ toast("Slika se još razvija…"); return; }
+  if (NATIVE){
+    if (!NATIVE.hasDrive()) toast("Google Drive nije instaliran — biraj gde da pošalješ.");
+    if (!NATIVE.shareImage(await toB64(current.blob), fileName(current.film, current.t), true)) toast("Slanje nije uspelo.");
+    return;
+  }
+  if (!(await shareFiles([asFile(current)], "Izaberi Google Drive")))
+    toast("Deljenje ovde nije podržano — sačuvaj pa otpremi na Drive.");
+};
+$("bDel").onclick = async () => {
+  if (current && current.id != null){ await dbDel(current.id); }
+  const all = await dbAll(); setThumb(all.length ? all[all.length-1].blob : null);
+  toast("Obrisano iz role."); back();
+};
+$("bSaveAll").onclick = async () => {
+  const all = await dbAll();
+  if (!all.length){ toast("Rola je prazna."); return; }
+  if (NATIVE){
+    let n = 0;
+    for (const r of all){ if (NATIVE.saveImage(await toB64(r.blob), fileName(r.film, r.t))) n++; }
+    toast(n === all.length ? `Sačuvano ${n} slika u galeriju.` : `Sačuvano ${n} od ${all.length} slika.`);
+    return;
+  }
+  const files = all.map(asFile);
+  if (isIOS || (navigator.canShare && navigator.canShare({files}))){
+    if (await shareFiles(files, isIOS ? "Izaberi „Sačuvaj slike“" : "Izaberi gde da sačuvaš")) return;
+  }
+  all.forEach((r, i) => setTimeout(() => download(r.blob, fileName(r.film, r.t)), i * 350));
+  toast(`Čuvam ${all.length} slika…`);
+};
+
+/* ================= ROLA EKRAN ================= */
+let gridURLs = [];
+async function renderGrid(){
+  gridURLs.forEach(u => URL.revokeObjectURL(u)); gridURLs = [];
+  const all = await dbAll(), g = $("grid"); g.innerHTML = "";
+  if (!all.length){ g.innerHTML = `<div class="emptyg"><b>Prazna rola</b>Slike koje napraviš pojaviće se ovde.</div>`; return; }
+  all.slice().reverse().forEach(r => {
+    const u = URL.createObjectURL(r.blob); gridURLs.push(u);
+    const b = document.createElement("button"); b.style.backgroundImage = `url(${u})`;
+    b.onclick = () => { current = r; const im = new Image(); im.src = URL.createObjectURL(r.blob); showPhoto(im, r, false); };
+    g.appendChild(b);
+  });
+}
+function askNewRoll(){ $("sheet").classList.add("on"); }
+$("shNo").onclick = () => $("sheet").classList.remove("on");
+$("shYes").onclick = async () => {
+  $("sheet").classList.remove("on");
+  await dbClear(); used = 0; store.set("fk_used", 0); setThumb(null);
+  toast("Nova rola od 27 snimaka."); go("sCam");
+};
+$("bNew1").onclick = askNewRoll; $("bNew2").onclick = askNewRoll;
+$("bSee").onclick = () => go("sRoll");
+$("bRoll").onclick = () => go("sRoll");
+$("bThumb").onclick = async () => { const all = await dbAll(); if (all.length){ current = all[all.length-1]; const im = new Image(); im.src = URL.createObjectURL(current.blob); showPhoto(im, current, false); } else go("sRoll"); };
+
+/* ================= NAVIGACIJA ================= */
+let prev = "sCam";
+function go(id){
+  const cur = document.querySelector(".screen.on");
+  if (cur && cur.id !== id && cur.id !== "sPhoto") prev = cur.id;
+  document.querySelectorAll(".screen").forEach(s => s.classList.toggle("on", s.id === id));
+  if (id === "sRoll") renderGrid();
+  if (id === "sCam") updateCounter(); else stopLoop();
+}
+function back(){ go(prev === "sRoll" ? "sRoll" : "sCam"); }
+$("bPhotoBack").onclick = back;
+window.__back = () => {
+  if ($("sheet").classList.contains("on")){ $("sheet").classList.remove("on"); return true; }
+  const cur = document.querySelector(".screen.on");
+  if (!cur || cur.id === "sCam") return false;
+  if (cur.id === "sPhoto") back(); else go("sCam");
+  return true;
+};
+window.__shutter = () => { if ($("sCam").classList.contains("on")) $("bShutter").click(); };
+$("bRollBack").onclick = () => go("sCam");
+
+/* ================= UI ================= */
+let tt;
+function toast(m){ const t = $("toast"); t.textContent = m; t.classList.add("on"); clearTimeout(tt); tt = setTimeout(() => t.classList.remove("on"), 2800); }
+
+function renderStyles(){
+  const box = $("styles"); box.innerHTML = "";
+  FILMS.forEach((f, i) => {
+    const b = document.createElement("button"); b.className = "style" + (f === film ? " on" : "");
+    b.innerHTML = `${f.name}<small>${f.info}</small>`; b.dataset.i = i;
+    b.onclick = () => b.scrollIntoView({behavior:"smooth", inline:"center", block:"nearest"});
+    box.appendChild(b);
+  });
+  requestAnimationFrame(() => box.children[FILMS.indexOf(film)].scrollIntoView({inline:"center", block:"nearest"}));
+  let st;
+  box.addEventListener("scroll", () => {
+    clearTimeout(st);
+    st = setTimeout(() => {
+      const mid = box.scrollLeft + box.clientWidth/2;
+      let best = 0, bd = 1e9;
+      [...box.children].forEach((c, i) => { const d = Math.abs(c.offsetLeft + c.offsetWidth/2 - mid); if (d < bd){ bd = d; best = i; } });
+      if (FILMS[best] !== film){
+        film = FILMS[best]; LUT = buildLUT(film); store.set("fk_film", film.id);
+        [...box.children].forEach((c, i) => c.classList.toggle("on", i === best));
+        if (navigator.vibrate) navigator.vibrate(8);
+      }
+    }, 60);
+  }, {passive:true});
+}
+function bindOpt(id, key){
+  const b = $(id); b.setAttribute("aria-pressed", opts[key]);
+  b.onclick = () => { opts[key] = !opts[key]; b.setAttribute("aria-pressed", opts[key]); store.set("fk_opts", opts);
+    if (key === "date"){ $("stamp").classList.toggle("on", opts.date); } };
+}
+
+(async function init(){
+  Object.assign(opts, store.get("fk_opts", {}));
+  film = FILMS.find(f => f.id === store.get("fk_film", "portra400")) || FILMS[1]; LUT = buildLUT(film);
+  $("stamp").textContent = dateText(); $("stamp").classList.toggle("on", opts.date);
+  bindOpt("oDate", "date"); bindOpt("oFrame", "frame");
+  renderStyles();
+  if (NATIVE) $("bNative").style.display = "none";
+  await openDB();
+  const all = await dbAll(); if (all.length) setThumb(all[all.length-1].blob);
+  updateCounter();
+  if ((NATIVE || store.get("fk_cam", false)) && window.isSecureContext && navigator.mediaDevices?.getUserMedia) startCamera();
+  if (!NATIVE && "serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+})();
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) stopCamera();
+  else if ($("sCam").classList.contains("on") && (NATIVE || store.get("fk_cam", false))) startCamera();
+});
+</script>
+</body>
+</html>
