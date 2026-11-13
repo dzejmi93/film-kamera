@@ -18,6 +18,9 @@ import android.view.KeyEvent;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
+import android.webkit.ValueCallback;
+import android.content.ClipData;
+import java.util.ArrayList;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -44,6 +47,8 @@ public class MainActivity extends Activity {
 
     private WebView web;
     private PermissionRequest pending;
+    private ValueCallback<Uri[]> fileCallback;
+    private static final int REQ_FILES = 3;
 
     public class Bridge {
         /** Saves a JPEG (base64) to Pictures/Film Kamera. Returns true when saved. */
@@ -78,6 +83,60 @@ public class MainActivity extends Activity {
                     startActivity(send);
                 } else {
                     startActivity(Intent.createChooser(send, "Send photo"));
+                }
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
+        /** Several photos at once: clear, add one by one, then send. */
+        @JavascriptInterface
+        public void stageClear() {
+            File dir = new File(getCacheDir(), "share");
+            if (!dir.exists()) dir.mkdirs();
+            File[] old = dir.listFiles();
+            if (old != null) for (File f : old) f.delete();
+        }
+
+        @JavascriptInterface
+        public boolean stageImage(String base64, String name) {
+            try {
+                File dir = new File(getCacheDir(), "share");
+                if (!dir.exists()) dir.mkdirs();
+                FileOutputStream out = new FileOutputStream(new File(dir, safeName(name)));
+                out.write(Base64.decode(base64, Base64.DEFAULT));
+                out.close();
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
+        /** Sends the staged photos to one app (Google Photos, Drive) or, with "", to the share menu. */
+        @JavascriptInterface
+        public boolean sendStaged(String pkg) {
+            try {
+                File[] files = new File(getCacheDir(), "share").listFiles();
+                if (files == null || files.length == 0) return false;
+                ArrayList<Uri> uris = new ArrayList<>();
+                for (File f : files) uris.add(ShareProvider.uriFor(f));
+                Intent send;
+                if (uris.size() == 1) {
+                    send = new Intent(Intent.ACTION_SEND).putExtra(Intent.EXTRA_STREAM, uris.get(0));
+                } else {
+                    send = new Intent(Intent.ACTION_SEND_MULTIPLE).putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
+                }
+                send.setType("image/jpeg").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                ClipData clip = ClipData.newRawUri("", uris.get(0));
+                for (int i = 1; i < uris.size(); i++) clip.addItem(new ClipData.Item(uris.get(i)));
+                send.setClipData(clip);
+                if (pkg != null && !pkg.isEmpty()) {
+                    if (!isInstalled(pkg)) return false;
+                    send.setPackage(pkg);
+                    startActivity(send);
+                } else {
+                    startActivity(Intent.createChooser(send, "Send photos"));
                 }
                 return true;
             } catch (Exception e) {
@@ -177,6 +236,24 @@ public class MainActivity extends Activity {
         });
 
         web.setWebChromeClient(new WebChromeClient() {
+            /** Upload button: pick photos from the phone's gallery. */
+            @Override
+            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> cb, FileChooserParams params) {
+                if (fileCallback != null) fileCallback.onReceiveValue(null);
+                fileCallback = cb;
+                Intent pick = new Intent(Intent.ACTION_GET_CONTENT)
+                        .addCategory(Intent.CATEGORY_OPENABLE)
+                        .setType("image/*")
+                        .putExtra(Intent.EXTRA_ALLOW_MULTIPLE, params.getMode() == FileChooserParams.MODE_OPEN_MULTIPLE);
+                try {
+                    startActivityForResult(Intent.createChooser(pick, "Choose photos"), REQ_FILES);
+                } catch (Exception e) {
+                    fileCallback = null;
+                    return false;
+                }
+                return true;
+            }
+
             @Override
             public void onPermissionRequest(final PermissionRequest request) {
                 runOnUiThread(() -> {
@@ -212,6 +289,24 @@ public class MainActivity extends Activity {
             }
         }
         r.deny();
+    }
+
+    @Override
+    protected void onActivityResult(int code, int result, Intent data) {
+        super.onActivityResult(code, result, data);
+        if (code != REQ_FILES || fileCallback == null) return;
+        Uri[] out = null;
+        if (result == RESULT_OK && data != null) {
+            if (data.getClipData() != null) {
+                ClipData c = data.getClipData();
+                out = new Uri[c.getItemCount()];
+                for (int i = 0; i < c.getItemCount(); i++) out[i] = c.getItemAt(i).getUri();
+            } else if (data.getData() != null) {
+                out = new Uri[]{data.getData()};
+            }
+        }
+        fileCallback.onReceiveValue(out);
+        fileCallback = null;
     }
 
     @Override

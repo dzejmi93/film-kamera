@@ -30,6 +30,7 @@
   .circ svg{width:20px;height:20px}
   .circ[aria-pressed="true"]{background:#fff;color:#000}
   .circ.ghost{visibility:hidden}
+  .brand{font-family:Fraunces,serif;font-style:italic;font-size:26px;letter-spacing:-.01em}
   .counter{text-align:center;line-height:1}
   .counter b{display:block;font-family:Fraunces,serif;font-weight:400;font-size:30px;font-variation-settings:"opsz" 72}
   .counter span{font-size:10px;letter-spacing:.16em;color:var(--mute)}
@@ -89,14 +90,40 @@
   .btn.red{color:#ff5b4f}
 
   /* ---------- rola (galerija) ---------- */
-  .grid{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:0 3px;align-content:start}
-  .grid button{position:relative;aspect-ratio:3/4;background:var(--s2) center/cover;transition:transform .12s}
-  .grid.selecting button::after{content:"";position:absolute;top:7px;right:7px;width:22px;height:22px;border-radius:50%;
+  .album{flex:1;overflow-y:auto;position:relative;padding-bottom:110px}
+  .hero{position:relative;min-height:330px;padding:calc(env(safe-area-inset-top) + 14px) 18px 64px;overflow:hidden}
+  .heroBg{position:absolute;inset:-20px;background:#1c1c1c center/cover;filter:blur(6px) brightness(.5) saturate(.9);transform:scale(1.05)}
+  .heroBg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,.45))}
+  .heroTop{position:relative;display:flex;justify-content:space-between;align-items:center}
+  .glass{background:rgba(255,255,255,.14)!important;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  .heroTitle{position:relative;margin:56px 0 26px;text-align:center;font-family:Fraunces,serif;font-weight:400;font-size:42px;line-height:1.05;letter-spacing:-.015em}
+  .stats{position:relative;display:flex;justify-content:space-around;text-align:center}
+  .stats b{display:block;font-family:Fraunces,serif;font-style:italic;font-weight:400;font-size:30px;line-height:1.1}
+  .stats span{font-size:14px;color:#cfcfcf}
+  .sheetBody{position:relative;margin-top:-34px;background:#1a1a1a;border-radius:30px 30px 0 0;min-height:60vh;padding:22px 16px 20px}
+  .tabs{display:flex;justify-content:center;margin-bottom:18px}
+  .tab{display:flex;align-items:center;gap:9px;font-size:16px;font-weight:600;padding:6px 10px 12px;border-bottom:2px solid #fff}
+  .tab svg{width:20px;height:20px}
+  .dayH{font-size:13px;letter-spacing:.14em;color:var(--mute);font-weight:600;margin:14px 4px 12px;text-transform:uppercase}
+  .day{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+  .day button{position:relative;aspect-ratio:3/4.15;border-radius:20px;overflow:hidden;background:#2a2a2a center/cover;transition:transform .12s}
+  .day button .cap{position:absolute;left:0;right:0;bottom:0;padding:22px 10px 9px;text-align:left;font-family:Fraunces,serif;font-size:15px;
+    background:linear-gradient(180deg,transparent,rgba(0,0,0,.55));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #grid.selecting .day button::after{content:"";position:absolute;top:8px;right:8px;width:22px;height:22px;border-radius:50%;
     border:1.5px solid rgba(255,255,255,.9);background:rgba(0,0,0,.25)}
-  .grid button.sel{transform:scale(.92)}
-  .grid button.sel::after{background:var(--orange) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5 9-10'/%3E%3C/svg%3E") center/14px no-repeat;border-color:var(--orange)}
+  .day button.sel{transform:scale(.92)}
+  .day button.sel::after{background:var(--orange) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5 9-10'/%3E%3C/svg%3E") center/14px no-repeat!important;border-color:var(--orange)!important}
+  .abar{position:fixed;left:0;right:0;bottom:0;display:flex;gap:10px;padding:14px 16px calc(env(safe-area-inset-bottom) + 14px);
+    background:linear-gradient(180deg,rgba(26,26,26,0),#1a1a1a 35%)}
+  .abtn{flex:1;height:58px;border-radius:30px;background:#2a2a2a;display:flex;align-items:center;justify-content:center;gap:9px;font-size:16px;font-weight:600}
+  .abtn.main{flex:1.25;background:#fff;color:#000}
+  .abtn.red{color:#ff5b4f}
+  .abtn svg{width:19px;height:19px}
+  .abtn .ic{font-size:22px;font-weight:400;line-height:1}
+  .abtn:disabled{opacity:.4}
+  .opts2{display:flex;flex-direction:column;gap:8px}
   .pillbtn{height:36px;padding:0 16px;border-radius:20px;background:var(--s2);font-size:13px;font-weight:600}
-  .emptyg{grid-column:1/-1;text-align:center;color:var(--mute);padding:60px 30px;font-size:14px;line-height:1.5}
+  .emptyg{text-align:center;color:var(--mute);padding:50px 30px;font-size:14px;line-height:1.5}
   .emptyg b{display:block;font-family:Fraunces,serif;font-weight:400;font-size:27px;color:#fff;margin-bottom:6px}
   .foot{padding:12px 12px 0}
 
@@ -121,7 +148,7 @@
     <button class="circ ghost" id="bFlash" aria-label="Flash" aria-pressed="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
     </button>
-    <div class="counter"><b id="left">27</b><span>SHOTS LEFT</span></div>
+    <div class="brand">Roll</div>
     <button class="circ" id="bRoll" aria-label="Roll">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>
     </button>
@@ -137,17 +164,12 @@
       <button data-z="2" aria-pressed="false">2×</button>
     </div>
     <div class="overlay" id="ovStart">
-      <h2>One roll.<br><i>27 shots.</i></h2>
+      <h2>Point,<br><i>shoot, keep.</i></h2>
       <p>Every photo develops on your phone. Nothing is sent to any server.</p>
       <button class="wbtn" id="bStart">Start camera</button>
       <button class="tlink" id="bNative">or use the phone camera</button>
     </div>
-    <div class="overlay" id="ovDone" style="display:none">
-      <h2>That’s a<br><i>wrap.</i></h2>
-      <p>You used all 27 shots. Look back at your roll or load a new one.</p>
-      <button class="wbtn" id="bNew1">Load a new roll</button>
-      <button class="tlink" id="bSee">See your roll</button>
-    </div>
+
   </div>
 
   <div class="styles" id="styles"></div>
@@ -184,21 +206,50 @@
   </div>
 </section>
 
-<!-- ============ ROLA ============ -->
-<section class="screen" id="sRoll">
-  <div class="head">
-    <button class="circ" id="bRollBack" aria-label="Back">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>
-    </button>
-    <h1 id="rollTitle">My <i>roll</i></h1>
-    <button class="pillbtn" id="bSelect">Select</button>
+<!-- ============ ALBUM ============ -->
+<section class="screen" id="sRoll" style="padding:0">
+  <div class="album" id="album">
+    <div class="hero" id="hero">
+      <div class="heroBg" id="heroBg"></div>
+      <div class="heroTop">
+        <button class="circ glass" id="bRollBack" aria-label="Back">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>
+        </button>
+        <button class="pillbtn glass" id="bSelect">Select</button>
+      </div>
+      <h1 class="heroTitle" id="rollTitle">My roll</h1>
+      <div class="stats">
+        <div><b id="stMoments">0</b><span>Moments</span></div>
+        <div><b id="stDate">—</b><span id="stDateL">Started</span></div>
+        <div><b id="stFilms">0</b><span>Films</span></div>
+      </div>
+    </div>
+    <div class="sheetBody">
+      <div class="tabs"><span class="tab on">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="15" height="15" rx="2"/><path d="M7 3h12a2 2 0 0 1 2 2v12"/><path d="M3 16l4-4 4 4 3-3 4 4"/></svg>Album</span></div>
+      <div id="grid"></div>
+    </div>
   </div>
-  <div class="grid" id="grid"></div>
-  <div class="foot row">
-    <button class="btn" id="bSaveAll">Save all</button>
-    <button class="btn" id="bNew2">New roll</button>
+  <div class="abar">
+    <button class="abtn" id="bUpload"><span class="ic">+</span>Upload</button>
+    <button class="abtn main" id="bSend">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 3 3 10.5l7 2.5 2.5 7z"/></svg>Send</button>
+    <button class="abtn" id="bSaveAll">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 19h14"/></svg>Save</button>
   </div>
 </section>
+
+<div class="sheet" id="sendSheet"><div>
+  <h3 id="sendTitle">Send photos</h3>
+  <p id="sendText">Photos go straight from your phone to your own account.</p>
+  <div class="opts2">
+    <button class="btn" id="sPhotos">Google Photos</button>
+    <button class="btn" id="sDrive">Google Drive</button>
+    <button class="btn" id="sOther">Other apps…</button>
+    <button class="btn" id="sCancel" style="color:var(--mute)">Cancel</button>
+  </div>
+</div></div>
+
 
 <div class="sheet" id="sheet"><div>
   <h3 id="shTitle">New roll?</h3>
@@ -207,6 +258,7 @@
 </div></div>
 
 <input type="file" id="fCap" accept="image/*" capture="environment">
+<input type="file" id="fGal" accept="image/*" multiple>
 <div class="flash" id="flash"></div>
 <div class="toast" id="toast"></div>
 
@@ -232,7 +284,6 @@ const FILMS = [
     exposure:1.16, contrast:.18, fade:.03, roll:.64, warm:.13, tint:-.035,
     shadows:[.02,.015,-.012], highlights:[-.04,-.05,-.075], sat:1.0, grain:.06, halation:.08, vignette:.20 },
 ];
-const ROLL = 27;
 
 const $ = id => document.getElementById(id);
 const video = $("video"), preview = $("preview");
@@ -452,14 +503,9 @@ function dbAdd(rec){ return new Promise(res => { if (!db) return res(null); cons
 function dbDel(id){ return new Promise(res => { if (!db) return res(); const q = tx("readwrite").delete(id); q.onsuccess = q.onerror = () => res(); }); }
 function dbClear(){ return new Promise(res => { if (!db) return res(); const q = tx("readwrite").clear(); q.onsuccess = q.onerror = () => res(); }); }
 
-let used = store.get("fk_used", 0);   // koliko je snimaka iskorišćeno u roli
+let used = store.get("fk_used", 0);   // redni broj poslednjeg snimka (za okvir filma)
 function updateCounter(){
-  const left = Math.max(0, ROLL - used);
-  $("left").textContent = left;
-  const done = left === 0;
-  $("bShutter").disabled = done;
-  $("ovDone").style.display = done ? "flex" : "none";
-  if (done) stopLoop(); else if (stream && !live && $("sCam").classList.contains("on")) { live = true; loop(); }
+  if (stream && !live && $("sCam").classList.contains("on")) { live = true; loop(); }
 }
 
 /* ================= ŽIVI PREGLED ================= */
@@ -662,7 +708,7 @@ async function grabFrame(){
 let busy = false;
 $("bShutter").onclick = async () => {
   if (!stream){ startCamera(); return; }
-  if (used >= ROLL || busy) return;
+  if (busy) return;
   busy = true;
   const no = used + 1;
   const fl = $("flash"); fl.classList.add("on"); setTimeout(() => fl.classList.remove("on"), 70);
@@ -679,7 +725,7 @@ $("bShutter").onclick = async () => {
 };
 $("fCap").onchange = e => {
   const file = e.target.files[0]; e.target.value = "";
-  if (!file || used >= ROLL) return;
+  if (!file) return;
   const url = URL.createObjectURL(file), img = new Image();
   img.onload = async () => {
     const no = used + 1, c = develop(img, img.naturalWidth, img.naturalHeight, no);
@@ -735,17 +781,12 @@ $("bDel").onclick = async () => {
   const all = await dbAll(); setThumb(all.length ? all[all.length-1].blob : null);
   toast("Deleted from roll."); back();
 };
-$("bSaveAll").onclick = async () => {
-  if (selecting){ const all = await dbAll(); const list = all.filter(r => selected.has(r.id)); if (list.length){ await saveList(list); exitSelect(); } return; }
-  const all = await dbAll();
-  if (!all.length){ toast("Your roll is empty."); return; }
-  await saveList(all);
-};
+/* ================= ALBUM ================= */
 async function saveList(all){
   if (NATIVE){
     let n = 0;
     for (const r of all){ if (NATIVE.saveImage(await toB64(r.blob), fileName(r.film, r.t))) n++; }
-    toast(n === all.length ? `Saved ${n} photos to gallery.` : `Saved ${n} of ${all.length} photos.`);
+    toast(n === all.length ? `Saved ${n} photo${n > 1 ? "s" : ""} to gallery.` : `Saved ${n} of ${all.length} photos.`);
     return;
   }
   const files = all.map(asFile);
@@ -755,29 +796,114 @@ async function saveList(all){
   all.forEach((r, i) => setTimeout(() => download(r.blob, fileName(r.film, r.t)), i * 350));
   toast(`Saving ${all.length} photos…`);
 }
+async function targetList(){
+  const all = await dbAll();
+  return selecting ? all.filter(r => selected.has(r.id)) : all;
+}
+$("bSaveAll").onclick = async () => {
+  const list = await targetList();
+  if (!list.length){ toast("Your roll is empty."); return; }
+  await saveList(list); if (selecting) exitSelect();
+};
 
-/* ================= ROLA EKRAN ================= */
+/* Pošalji: Google Photos / Drive / druge aplikacije — direktno sa telefona */
+const PKG = { photos: "com.google.android.apps.photos", drive: "com.google.android.apps.docs" };
+async function sendList(list, target){
+  if (NATIVE && NATIVE.stageClear){
+    NATIVE.stageClear();
+    for (const r of list) NATIVE.stageImage(await toB64(r.blob), fileName(r.film, r.t));
+    const ok = NATIVE.sendStaged(target ? PKG[target] : "");
+    if (!ok) toast(target === "photos" ? "Google Photos isn’t installed." : target === "drive" ? "Google Drive isn’t installed." : "Couldn’t send.");
+    return;
+  }
+  const files = list.map(asFile);
+  if (!(await shareFiles(files, target === "photos" ? "Choose Google Photos" : target === "drive" ? "Choose Google Drive" : "Choose an app")))
+    toast("Sharing isn’t supported here — save first, then upload.");
+}
+let sendPending = null;
+$("bSend").onclick = async () => {
+  const list = await targetList();
+  if (!list.length){ toast("Your roll is empty."); return; }
+  sendPending = list;
+  $("sendTitle").textContent = `Send ${list.length} photo${list.length > 1 ? "s" : ""}`;
+  $("sendText").textContent = "Google Photos adds them to your own library, where you can make an album and share it. Nothing passes through Roll.";
+  $("sendSheet").classList.add("on");
+};
+const closeSend = () => $("sendSheet").classList.remove("on");
+$("sCancel").onclick = closeSend;
+$("sendSheet").onclick = e => { if (e.target.id === "sendSheet") closeSend(); };
+[["sPhotos","photos"],["sDrive","drive"],["sOther",""]].forEach(([id, t]) => $(id).onclick = async () => {
+  closeSend(); const l = sendPending; sendPending = null; if (l){ await sendList(l, t); if (selecting) exitSelect(); }
+});
+
+/* Upload: uvezi slike iz galerije telefona i razvij ih izabranim filmom */
+$("bUpload").onclick = () => {
+  if (selecting){ askDelete(); return; }
+  $("fGal").click();
+};
+$("fGal").onchange = async e => {
+  const files = [...e.target.files]; e.target.value = "";
+  if (!files.length) return;
+  toast(`Developing ${files.length} photo${files.length > 1 ? "s" : ""} with ${film.name}…`, 4000);
+  for (const file of files){
+    await new Promise(res => {
+      const url = URL.createObjectURL(file), img = new Image();
+      img.onload = async () => {
+        const no = used + 1, c = develop(img, img.naturalWidth, img.naturalHeight, no);
+        used = no; store.set("fk_used", used); URL.revokeObjectURL(url);
+        await commit(c, no); res();
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); res(); };
+      img.src = url;
+    });
+  }
+  toast(`Added ${files.length} photo${files.length > 1 ? "s" : ""}.`);
+  renderGrid();
+};
+
 let gridURLs = [];
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const MON3 = MONTHS.map(m => m.slice(0,3));
 async function renderGrid(){
   gridURLs.forEach(u => URL.revokeObjectURL(u)); gridURLs = [];
   const all = await dbAll(), g = $("grid"); g.innerHTML = "";
-  if (!all.length){ g.innerHTML = `<div class="emptyg"><b>Empty roll</b>Photos you take will show up here.</div>`; return; }
+  // zaglavlje
+  $("stMoments").textContent = all.length;
+  $("stFilms").textContent = new Set(all.map(r => r.film)).size;
+  if (all.length){
+    const d0 = new Date(all[0].t); $("stDate").textContent = `${MON3[d0.getMonth()]} ${d0.getDate()}`;
+    const u = URL.createObjectURL(all[all.length-1].blob); gridURLs.push(u); $("heroBg").style.backgroundImage = `url(${u})`;
+  } else { $("stDate").textContent = "—"; $("heroBg").style.backgroundImage = ""; }
+  if (!all.length){ g.innerHTML = `<div class="emptyg"><b>Empty roll</b>Photos you take will show up here.</div>`; updateSelUI(); return; }
+  // grupisanje po danu, najnovije prvo
+  const groups = new Map();
   all.slice().reverse().forEach(r => {
-    const u = URL.createObjectURL(r.blob); gridURLs.push(u);
-    const b = document.createElement("button"); b.style.backgroundImage = `url(${u})`;
-    b.dataset.id = r.id;
-    if (selected.has(r.id)) b.classList.add("sel");
-    b.onclick = () => {
-      if (selecting){ toggleSel(r.id, b); return; }
-      current = r; const im = new Image(); im.src = URL.createObjectURL(r.blob); showPhoto(im, r, false);
-    };
-    // dug pritisak uključuje biranje
-    let lp;
-    b.addEventListener("pointerdown", () => { lp = setTimeout(() => { if (!selecting){ enterSelect(); toggleSel(r.id, b); b.dataset.lp = "1"; } }, 450); });
-    ["pointerup","pointerleave","pointercancel"].forEach(ev => b.addEventListener(ev, () => clearTimeout(lp)));
-    b.addEventListener("click", e => { if (b.dataset.lp){ delete b.dataset.lp; e.stopImmediatePropagation(); } }, true);
-    g.appendChild(b);
+    const d = new Date(r.t), k = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    if (!groups.has(k)) groups.set(k, {d, items: []});
+    groups.get(k).items.push(r);
   });
+  for (const {d, items} of groups.values()){
+    const h = document.createElement("div"); h.className = "dayH"; h.textContent = `${MONTHS[d.getMonth()]} ${d.getDate()}, ${DAYS[d.getDay()]}`; g.appendChild(h);
+    const box = document.createElement("div"); box.className = "day"; g.appendChild(box);
+    items.forEach(r => {
+      const u = URL.createObjectURL(r.blob); gridURLs.push(u);
+      const f = FILMS.find(x => x.id === r.film);
+      const b = document.createElement("button"); b.style.backgroundImage = `url(${u})`;
+      b.innerHTML = `<span class="cap">${f ? f.name : ""}</span>`;
+      if (selected.has(r.id)) b.classList.add("sel");
+      b.onclick = () => {
+        if (selecting){ toggleSel(r.id, b); return; }
+        current = r; const im = new Image(); im.src = URL.createObjectURL(r.blob); showPhoto(im, r, false);
+      };
+      let lp;
+      b.addEventListener("pointerdown", () => { lp = setTimeout(() => { if (!selecting){ enterSelect(); toggleSel(r.id, b); b.dataset.lp = "1"; } }, 450); });
+      ["pointerup","pointerleave","pointercancel"].forEach(ev => b.addEventListener(ev, () => clearTimeout(lp)));
+      b.addEventListener("click", e => { if (b.dataset.lp){ delete b.dataset.lp; e.stopImmediatePropagation(); } }, true);
+      box.appendChild(b);
+    });
+  }
+  updateSelUI();
 }
 
 /* ---- biranje više slika ---- */
@@ -786,15 +912,13 @@ function updateSelUI(){
   const n = selected.size;
   $("grid").classList.toggle("selecting", selecting);
   $("bSelect").textContent = selecting ? "Cancel" : "Select";
-  $("rollTitle").innerHTML = selecting ? (n ? `${n} <i>selected</i>` : `Select <i>photos</i>`) : `My <i>roll</i>`;
-  $("bSaveAll").textContent = selecting ? (n ? `Save ${n}` : "Save") : "Save all";
-  $("bNew2").textContent = selecting ? (n ? `Delete ${n}` : "Delete") : "New roll";
-  $("bNew2").classList.toggle("red", selecting);
-  $("bSaveAll").disabled = $("bNew2").disabled = selecting && !n;
-  $("bSaveAll").style.opacity = $("bNew2").style.opacity = (selecting && !n) ? .4 : 1;
+  $("rollTitle").innerHTML = selecting ? (n ? `${n} selected` : `Select photos`) : `My roll`;
+  $("bUpload").innerHTML = selecting ? (n ? `Delete ${n}` : "Delete") : `<span class="ic">+</span>Upload`;
+  $("bUpload").classList.toggle("red", selecting);
+  $("bSend").disabled = $("bSaveAll").disabled = $("bUpload").disabled = selecting && !n;
 }
 function enterSelect(){ selecting = true; selected.clear(); updateSelUI(); }
-function exitSelect(){ selecting = false; selected.clear(); document.querySelectorAll("#grid button.sel").forEach(b => b.classList.remove("sel")); updateSelUI(); }
+function exitSelect(){ selecting = false; selected.clear(); document.querySelectorAll("#grid .sel").forEach(b => b.classList.remove("sel")); updateSelUI(); }
 function toggleSel(id, b){
   if (selected.has(id)){ selected.delete(id); b.classList.remove("sel"); } else { selected.add(id); b.classList.add("sel"); }
   if (navigator.vibrate) navigator.vibrate(5);
@@ -809,27 +933,18 @@ function openSheet(title, text, yes, onYes, danger){
   $("shYes").textContent = yes; $("shYes").classList.toggle("red", !!danger); $("shYes").classList.toggle("main", !danger);
   sheetYes = onYes; $("sheet").classList.add("on");
 }
-function askNewRoll(){
-  if (selecting){
-    const n = selected.size; if (!n) return;
-    openSheet(`Delete ${n} photo${n > 1 ? "s" : ""}?`, "They’ll be removed from the app. Copies you already saved stay in your gallery and on Drive.",
-      "Delete", async () => {
-        for (const id of selected) await dbDel(id);
-        const all = await dbAll(); setThumb(all.length ? all[all.length-1].blob : null);
-        toast(`Deleted ${n} photo${n > 1 ? "s" : ""}.`); exitSelect(); renderGrid();
-      }, true);
-    return;
-  }
-  openSheet("New roll?", "Photos from this roll will be removed from the app. Anything you already saved stays in your gallery and on Drive.",
-    "Load new", async () => {
-      await dbClear(); used = 0; store.set("fk_used", 0); setThumb(null);
-      toast("New roll loaded · 27 shots."); go("sCam");
-    });
+function askDelete(){
+  const n = selected.size; if (!n) return;
+  openSheet(`Delete ${n} photo${n > 1 ? "s" : ""}?`, "They’ll be removed from the app. Copies you already saved stay in your gallery, Google Photos and Drive.",
+    "Delete", async () => {
+      for (const id of selected) await dbDel(id);
+      const all = await dbAll(); setThumb(all.length ? all[all.length-1].blob : null);
+      if (!all.length){ used = 0; store.set("fk_used", 0); }
+      toast(`Deleted ${n} photo${n > 1 ? "s" : ""}.`); exitSelect(); renderGrid();
+    }, true);
 }
 $("shNo").onclick = () => $("sheet").classList.remove("on");
 $("shYes").onclick = async () => { $("sheet").classList.remove("on"); const f = sheetYes; sheetYes = null; if (f) await f(); };
-$("bNew1").onclick = askNewRoll; $("bNew2").onclick = askNewRoll;
-$("bSee").onclick = () => go("sRoll");
 $("bRoll").onclick = () => go("sRoll");
 $("bThumb").onclick = async () => { const all = await dbAll(); if (all.length){ current = all[all.length-1]; const im = new Image(); im.src = URL.createObjectURL(current.blob); showPhoto(im, current, false); } else go("sRoll"); };
 
@@ -846,6 +961,7 @@ function back(){ go(prev === "sRoll" ? "sRoll" : "sCam"); }
 $("bPhotoBack").onclick = back;
 window.__back = () => {
   if ($("sheet").classList.contains("on")){ $("sheet").classList.remove("on"); return true; }
+  if ($("sendSheet").classList.contains("on")){ $("sendSheet").classList.remove("on"); return true; }
   const cur = document.querySelector(".screen.on");
   if (!cur || cur.id === "sCam") return false;
   if (cur.id === "sRoll" && selecting){ exitSelect(); return true; }
