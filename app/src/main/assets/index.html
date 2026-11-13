@@ -216,6 +216,9 @@ const FILMS = [
   { id:"cinestill800t", name:"CineStill 800T", short:["CineStill","800T"], info:"NIGHT",
     exposure:1.0, contrast:.36, fade:.012, roll:.80, warm:-.03, tint:.0,
     shadows:[-.03,.012,.04], highlights:[.015,.015,-.015], sat:1.15, grain:.08, halation:.6, halThresh:.6, vignette:.30 },
+  { id:"portra800", name:"Portra 800", short:["Portra","800"], info:"WEDDING",
+    exposure:1.0, contrast:.12, fade:.048, roll:.68, warm:.17, tint:-.02,
+    shadows:[-.05,-.015,.005], highlights:[.04,.065,.105], sat:1.02, grain:.075, halation:.12, vignette:.22 },
   { id:"portra400", name:"Portra 400", short:["Portra","400"], info:"DAY",
     exposure:1.13, contrast:.07, fade:.06, roll:.78, warm:.035, tint:-.015,
     shadows:[0,.012,.012], highlights:[.025,.012,-.05], sat:.80, grain:.04, halation:.04, vignette:.10 },
@@ -234,7 +237,7 @@ const ROLL = 27;
 const $ = id => document.getElementById(id);
 const video = $("video"), preview = $("preview");
 let pctx = null; // 2D rezerva ako WebGL ne radi
-let film = FILMS[1], LUT, stream = null, track = null, facing = "environment", live = false, raf = 0;
+let film = FILMS.find(f => f.id === "portra400"), LUT, stream = null, track = null, facing = "environment", live = false, raf = 0;
 let zoom = 1, zoomCur = 1, zoomAnim = 0, focusOK = false, focusTimer = 0, hwZoom = false, hwMax = 1, torchOK = false, torchOn = false, flashOK = false, flashOn = false, imageCapture = null;
 const opts = { date:false, frame:false };
 const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -888,7 +891,7 @@ function bindOpt(id, key){
 
 (async function init(){
   Object.assign(opts, store.get("fk_opts", {}));
-  film = FILMS.find(f => f.id === store.get("fk_film", "portra400")) || FILMS[1]; LUT = buildLUT(film);
+  film = FILMS.find(f => f.id === store.get("fk_film", "portra400")) || FILMS.find(f => f.id === "portra400"); LUT = buildLUT(film);
   initGL();
   bindTap();
   $("stamp").textContent = dateText(); $("stamp").classList.toggle("on", opts.date);

@@ -1,6 +1,6 @@
 # Roll
 
-An Android film camera with five looks: CineStill 800T, Portra 400, Ektar 100, HP5 and Gold 200.
+An Android film camera with six looks: CineStill 800T, Portra 800, Portra 400, Ektar 100, HP5 and Gold 200.
 
 - Photos develop on the phone. The app has no server and sends nothing to the internet.
 - **Save to gallery** puts photos in **Pictures/Roll**.
