@@ -90,7 +90,12 @@
 
   /* ---------- rola (galerija) ---------- */
   .grid{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:0 3px;align-content:start}
-  .grid button{aspect-ratio:3/4;background:var(--s2) center/cover}
+  .grid button{position:relative;aspect-ratio:3/4;background:var(--s2) center/cover;transition:transform .12s}
+  .grid.selecting button::after{content:"";position:absolute;top:7px;right:7px;width:22px;height:22px;border-radius:50%;
+    border:1.5px solid rgba(255,255,255,.9);background:rgba(0,0,0,.25)}
+  .grid button.sel{transform:scale(.92)}
+  .grid button.sel::after{background:var(--orange) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5 9-10'/%3E%3C/svg%3E") center/14px no-repeat;border-color:var(--orange)}
+  .pillbtn{height:36px;padding:0 16px;border-radius:20px;background:var(--s2);font-size:13px;font-weight:600}
   .emptyg{grid-column:1/-1;text-align:center;color:var(--mute);padding:60px 30px;font-size:14px;line-height:1.5}
   .emptyg b{display:block;font-family:Fraunces,serif;font-weight:400;font-size:27px;color:#fff;margin-bottom:6px}
   .foot{padding:12px 12px 0}
@@ -130,6 +135,7 @@
     <div class="zoom" id="zoom" hidden>
       <button data-z="1" aria-pressed="true">1×</button>
       <button data-z="2" aria-pressed="false">2×</button>
+      <button data-z="3" aria-pressed="false">3×</button>
     </div>
     <div class="overlay" id="ovStart">
       <h2>One roll.<br><i>27 shots.</i></h2>
@@ -185,8 +191,8 @@
     <button class="circ" id="bRollBack" aria-label="Back">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>
     </button>
-    <h1>My <i>roll</i></h1>
-    <div class="circ ghost"></div>
+    <h1 id="rollTitle">My <i>roll</i></h1>
+    <button class="pillbtn" id="bSelect">Select</button>
   </div>
   <div class="grid" id="grid"></div>
   <div class="foot row">
@@ -196,8 +202,8 @@
 </section>
 
 <div class="sheet" id="sheet"><div>
-  <h3>New roll?</h3>
-  <p>Photos from this roll will be removed from the app. Anything you already saved stays in your gallery and on Drive.</p>
+  <h3 id="shTitle">New roll?</h3>
+  <p id="shText">Photos from this roll will be removed from the app. Anything you already saved stays in your gallery and on Drive.</p>
   <div class="row"><button class="btn" id="shNo">Cancel</button><button class="btn main" id="shYes">Load new</button></div>
 </div></div>
 
@@ -227,7 +233,7 @@ const $ = id => document.getElementById(id);
 const video = $("video"), preview = $("preview");
 let pctx = null; // 2D rezerva ako WebGL ne radi
 let film = FILMS[1], LUT, stream = null, track = null, facing = "environment", live = false, raf = 0;
-let zoom = 1, zoomCur = 1, zoomAnim = 0, focusOK = false, focusTimer = 0, hwZoom = false, torchOK = false, torchOn = false, flashOK = false, flashOn = false, imageCapture = null;
+let zoom = 1, zoomCur = 1, zoomAnim = 0, focusOK = false, focusTimer = 0, hwZoom = false, hwMax = 1, torchOK = false, torchOn = false, flashOK = false, flashOn = false, imageCapture = null;
 const opts = { date:false, frame:false };
 const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const store = { get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
@@ -390,9 +396,13 @@ function initGL(){
 }
 function syncLUT(){ if (glPrev) glPrev.setLUT(LUT); if (glCap) glCap.setLUT(LUT); }
 
+/* deo zuma koji kamera telefona ne može sama, pa se radi isecanjem */
+function digitalPart(z){ return hwZoom ? z / Math.min(z, hwMax) : z; }
+
 function develop(src, sw, sh, no, fromCam){
   let sx = 0, sy = 0, cw = sw, ch = sh;
-  if (fromCam && zoom > 1 && !hwZoom){ cw = sw/zoom; ch = sh/zoom; sx = (sw-cw)/2; sy = (sh-ch)/2; }
+  const dz = fromCam ? digitalPart(zoom) : 1;
+  if (dz > 1.001){ cw = sw/dz; ch = sh/dz; sx = (sw-cw)/2; sy = (sh-ch)/2; }
   const lim = Math.min(4000, glCap ? glCap.maxTex : 4000);
   const k = Math.min(1, lim / Math.max(cw, ch)), w = Math.round(cw*k), h = Math.round(ch*k);
   const c = document.createElement("canvas"); c.width = w; c.height = h;
@@ -452,7 +462,8 @@ function loop(){
   if (!live) return;
   if (video.readyState >= 2 && video.videoWidth){
     let vw = video.videoWidth, vh = video.videoHeight, sx = 0, sy = 0;
-    if (zoomCur > 1.001 && !hwZoom){ const nw = vw/zoomCur, nh = vh/zoomCur; sx = (vw-nw)/2; sy = (vh-nh)/2; vw = nw; vh = nh; }
+    const dzp = digitalPart(zoomCur);
+    if (dzp > 1.001){ const nw = vw/dzp, nh = vh/dzp; sx = (vw-nw)/2; sy = (vh-nh)/2; vw = nw; vh = nh; }
     if (glPrev){
       const W = video.videoWidth, H = video.videoHeight;
       const k = Math.min(1, 1440 / Math.max(vw, vh));
@@ -488,7 +499,8 @@ async function startCamera(){
     video.srcObject = stream; await video.play();
     track = stream.getVideoTracks()[0];
     const cap = track.getCapabilities ? track.getCapabilities() : {};
-    hwZoom = !!(cap.zoom && cap.zoom.max >= 2);
+    hwZoom = !!(cap.zoom && cap.zoom.max > 1);   // zum preko kamere telefona (na S23 do 3× prelazi na telefoto objektiv)
+    hwMax = hwZoom ? cap.zoom.max : 1;
     torchOK = !!cap.torch;
     focusOK = !!(cap.focusMode && cap.focusMode.includes("single-shot"));
     if (cap.focusMode && cap.focusMode.includes("continuous")){ try{ await track.applyConstraints({advanced:[{focusMode:"continuous"}]}); }catch(e){} }
@@ -517,7 +529,7 @@ function stopCamera(){
 let zBusy = false;
 async function applyHwZoom(v){
   if (!hwZoom || !track) return;
-  try{ await track.applyConstraints({advanced:[{zoom:v}]}); }catch(e){ hwZoom = false; }
+  try{ await track.applyConstraints({advanced:[{zoom: Math.min(v, hwMax)}]}); }catch(e){ hwZoom = false; }
 }
 async function setZoom(z, instant){
   zoom = z;
@@ -547,7 +559,8 @@ function tapToVideo(clientX, clientY){
   if (a > e){ dh = r.height; dw = dh * a; ox = (r.width - dw) / 2; } else { dw = r.width; dh = dw / a; oy = (r.height - dh) / 2; }
   let u = (clientX - r.left - ox) / dw, v = (clientY - r.top - oy) / dh;
   if (facing === "user") u = 1 - u;
-  if (!hwZoom && zoomCur > 1){ u = (1 - 1/zoomCur)/2 + u/zoomCur; v = (1 - 1/zoomCur)/2 + v/zoomCur; }
+  const dzt = digitalPart(zoomCur);
+  if (dzt > 1){ u = (1 - 1/dzt)/2 + u/dzt; v = (1 - 1/dzt)/2 + v/dzt; }
   return { x: c01(u), y: c01(v), px: clientX - r.left, py: clientY - r.top };
 }
 async function focusAt(clientX, clientY){
@@ -718,8 +731,12 @@ $("bDel").onclick = async () => {
   toast("Deleted from roll."); back();
 };
 $("bSaveAll").onclick = async () => {
+  if (selecting){ const all = await dbAll(); const list = all.filter(r => selected.has(r.id)); if (list.length){ await saveList(list); exitSelect(); } return; }
   const all = await dbAll();
   if (!all.length){ toast("Your roll is empty."); return; }
+  await saveList(all);
+};
+async function saveList(all){
   if (NATIVE){
     let n = 0;
     for (const r of all){ if (NATIVE.saveImage(await toB64(r.blob), fileName(r.film, r.t))) n++; }
@@ -732,7 +749,7 @@ $("bSaveAll").onclick = async () => {
   }
   all.forEach((r, i) => setTimeout(() => download(r.blob, fileName(r.film, r.t)), i * 350));
   toast(`Saving ${all.length} photos…`);
-};
+}
 
 /* ================= ROLA EKRAN ================= */
 let gridURLs = [];
@@ -743,17 +760,69 @@ async function renderGrid(){
   all.slice().reverse().forEach(r => {
     const u = URL.createObjectURL(r.blob); gridURLs.push(u);
     const b = document.createElement("button"); b.style.backgroundImage = `url(${u})`;
-    b.onclick = () => { current = r; const im = new Image(); im.src = URL.createObjectURL(r.blob); showPhoto(im, r, false); };
+    b.dataset.id = r.id;
+    if (selected.has(r.id)) b.classList.add("sel");
+    b.onclick = () => {
+      if (selecting){ toggleSel(r.id, b); return; }
+      current = r; const im = new Image(); im.src = URL.createObjectURL(r.blob); showPhoto(im, r, false);
+    };
+    // dug pritisak uključuje biranje
+    let lp;
+    b.addEventListener("pointerdown", () => { lp = setTimeout(() => { if (!selecting){ enterSelect(); toggleSel(r.id, b); b.dataset.lp = "1"; } }, 450); });
+    ["pointerup","pointerleave","pointercancel"].forEach(ev => b.addEventListener(ev, () => clearTimeout(lp)));
+    b.addEventListener("click", e => { if (b.dataset.lp){ delete b.dataset.lp; e.stopImmediatePropagation(); } }, true);
     g.appendChild(b);
   });
 }
-function askNewRoll(){ $("sheet").classList.add("on"); }
+
+/* ---- biranje više slika ---- */
+let selecting = false; const selected = new Set();
+function updateSelUI(){
+  const n = selected.size;
+  $("grid").classList.toggle("selecting", selecting);
+  $("bSelect").textContent = selecting ? "Cancel" : "Select";
+  $("rollTitle").innerHTML = selecting ? (n ? `${n} <i>selected</i>` : `Select <i>photos</i>`) : `My <i>roll</i>`;
+  $("bSaveAll").textContent = selecting ? (n ? `Save ${n}` : "Save") : "Save all";
+  $("bNew2").textContent = selecting ? (n ? `Delete ${n}` : "Delete") : "New roll";
+  $("bNew2").classList.toggle("red", selecting);
+  $("bSaveAll").disabled = $("bNew2").disabled = selecting && !n;
+  $("bSaveAll").style.opacity = $("bNew2").style.opacity = (selecting && !n) ? .4 : 1;
+}
+function enterSelect(){ selecting = true; selected.clear(); updateSelUI(); }
+function exitSelect(){ selecting = false; selected.clear(); document.querySelectorAll("#grid button.sel").forEach(b => b.classList.remove("sel")); updateSelUI(); }
+function toggleSel(id, b){
+  if (selected.has(id)){ selected.delete(id); b.classList.remove("sel"); } else { selected.add(id); b.classList.add("sel"); }
+  if (navigator.vibrate) navigator.vibrate(5);
+  updateSelUI();
+}
+$("bSelect").onclick = async () => { if (selecting) exitSelect(); else { if (!(await dbAll()).length){ toast("Your roll is empty."); return; } enterSelect(); } };
+
+/* ---- dijalog ---- */
+let sheetYes = null;
+function openSheet(title, text, yes, onYes, danger){
+  $("shTitle").textContent = title; $("shText").textContent = text;
+  $("shYes").textContent = yes; $("shYes").classList.toggle("red", !!danger); $("shYes").classList.toggle("main", !danger);
+  sheetYes = onYes; $("sheet").classList.add("on");
+}
+function askNewRoll(){
+  if (selecting){
+    const n = selected.size; if (!n) return;
+    openSheet(`Delete ${n} photo${n > 1 ? "s" : ""}?`, "They’ll be removed from the app. Copies you already saved stay in your gallery and on Drive.",
+      "Delete", async () => {
+        for (const id of selected) await dbDel(id);
+        const all = await dbAll(); setThumb(all.length ? all[all.length-1].blob : null);
+        toast(`Deleted ${n} photo${n > 1 ? "s" : ""}.`); exitSelect(); renderGrid();
+      }, true);
+    return;
+  }
+  openSheet("New roll?", "Photos from this roll will be removed from the app. Anything you already saved stays in your gallery and on Drive.",
+    "Load new", async () => {
+      await dbClear(); used = 0; store.set("fk_used", 0); setThumb(null);
+      toast("New roll loaded · 27 shots."); go("sCam");
+    });
+}
 $("shNo").onclick = () => $("sheet").classList.remove("on");
-$("shYes").onclick = async () => {
-  $("sheet").classList.remove("on");
-  await dbClear(); used = 0; store.set("fk_used", 0); setThumb(null);
-  toast("New roll loaded · 27 shots."); go("sCam");
-};
+$("shYes").onclick = async () => { $("sheet").classList.remove("on"); const f = sheetYes; sheetYes = null; if (f) await f(); };
 $("bNew1").onclick = askNewRoll; $("bNew2").onclick = askNewRoll;
 $("bSee").onclick = () => go("sRoll");
 $("bRoll").onclick = () => go("sRoll");
@@ -765,7 +834,7 @@ function go(id){
   const cur = document.querySelector(".screen.on");
   if (cur && cur.id !== id && cur.id !== "sPhoto") prev = cur.id;
   document.querySelectorAll(".screen").forEach(s => s.classList.toggle("on", s.id === id));
-  if (id === "sRoll") renderGrid();
+  if (id === "sRoll") renderGrid(); else if (selecting) exitSelect();
   if (id === "sCam") updateCounter(); else stopLoop();
 }
 function back(){ go(prev === "sRoll" ? "sRoll" : "sCam"); }
@@ -774,6 +843,7 @@ window.__back = () => {
   if ($("sheet").classList.contains("on")){ $("sheet").classList.remove("on"); return true; }
   const cur = document.querySelector(".screen.on");
   if (!cur || cur.id === "sCam") return false;
+  if (cur.id === "sRoll" && selecting){ exitSelect(); return true; }
   if (cur.id === "sPhoto") back(); else go("sCam");
   return true;
 };
