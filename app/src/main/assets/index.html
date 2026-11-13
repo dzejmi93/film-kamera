@@ -55,9 +55,9 @@
   .tlink{color:var(--mute);font-size:13px;text-decoration:underline}
 
   .styles{position:relative;height:54px;margin-top:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;
-    display:flex;align-items:center;padding:0 calc(50% - 60px)}
+    display:flex;align-items:center;padding:0 calc(50% - 74px)}
   .styles::-webkit-scrollbar{display:none}
-  .style{flex:0 0 120px;scroll-snap-align:center;text-align:center;font-family:Fraunces,serif;font-size:19px;color:#555;transition:color .2s,transform .2s}
+  .style{flex:0 0 148px;white-space:nowrap;scroll-snap-align:center;text-align:center;font-family:Fraunces,serif;font-size:19px;color:#555;transition:color .2s,transform .2s}
   .style.on{color:#fff;transform:scale(1.08)}
   .style small{display:block;font-family:Manrope,sans-serif;font-size:10px;letter-spacing:.12em;color:var(--orange);opacity:0;transition:opacity .2s}
   .style.on small{opacity:1}
@@ -135,7 +135,6 @@
     <div class="zoom" id="zoom" hidden>
       <button data-z="1" aria-pressed="true">1×</button>
       <button data-z="2" aria-pressed="false">2×</button>
-      <button data-z="3" aria-pressed="false">3×</button>
     </div>
     <div class="overlay" id="ovStart">
       <h2>One roll.<br><i>27 shots.</i></h2>
@@ -214,12 +213,15 @@
 <script>
 /* ================= FILMOVI ================= */
 const FILMS = [
-  { id:"portra800", name:"Portra 800", short:["Portra","800"], info:"NIGHT",
-    exposure:1.0, contrast:.30, fade:.025, roll:.80, warm:.10, tint:-.01,
-    shadows:[-.025,.012,.008], highlights:[.04,.025,-.07], sat:.98, grain:.085, halation:.32, vignette:.30 },
+  { id:"cinestill800t", name:"CineStill 800T", short:["CineStill","800T"], info:"NIGHT",
+    exposure:1.0, contrast:.36, fade:.012, roll:.80, warm:-.03, tint:.0,
+    shadows:[-.03,.012,.04], highlights:[.015,.015,-.015], sat:1.15, grain:.08, halation:.6, halThresh:.6, vignette:.30 },
   { id:"portra400", name:"Portra 400", short:["Portra","400"], info:"DAY",
     exposure:1.13, contrast:.07, fade:.06, roll:.78, warm:.035, tint:-.015,
     shadows:[0,.012,.012], highlights:[.025,.012,-.05], sat:.80, grain:.04, halation:.04, vignette:.10 },
+  { id:"ektar100", name:"Ektar 100", short:["Ektar","100"], info:"LANDSCAPE",
+    exposure:1.0, contrast:.36, fade:.012, roll:.88, warm:.03, tint:.015,
+    shadows:[-.01,.0,.03], highlights:[.04,.0,-.045], sat:1.35, grain:.025, halation:.03, vignette:.24 },
   { id:"hp5", name:"HP5", short:["HP","5"], info:"B&W",
     exposure:1.02, contrast:.46, fade:.025, roll:.86, warm:0, tint:0,
     shadows:[0,0,0], highlights:[0,0,0], sat:0, bw:true, grain:.15, halation:0, vignette:.26 },
@@ -287,7 +289,7 @@ function halation(ctx, w, h, s){
   x.drawImage(ctx.canvas, 0, 0, sw, sh);
   const im = x.getImageData(0, 0, sw, sh), d = im.data;
   for (let i = 0; i < d.length; i += 4){
-    const l = (0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2]) / 255, m = Math.max(0, (l - .72) / .28);
+    const l = (0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2]) / 255, t = s.halThresh || .72, m = Math.max(0, (l - t) / (1 - t));
     d[i] = 255*m; d[i+1] = 70*m; d[i+2] = 25*m; d[i+3] = 255;
   }
   x.putImageData(im, 0, 0);
