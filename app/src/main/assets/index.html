@@ -34,7 +34,7 @@
   .counter b{display:block;font-family:Fraunces,serif;font-weight:400;font-size:30px;font-variation-settings:"opsz" 72}
   .counter span{font-size:10px;letter-spacing:.16em;color:var(--mute)}
   .vf{flex:1;min-height:0;position:relative;margin:0 12px;border-radius:26px;overflow:hidden;background:var(--s1)}
-  .vf canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .vf canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .18s}
   #video{display:none}
   .stamp{position:absolute;right:16px;bottom:16px;font-family:"Space Mono",monospace;font-size:13px;color:var(--orange);
     text-shadow:0 0 8px rgba(243,154,43,.7);display:none}
@@ -233,6 +233,7 @@ const $ = id => document.getElementById(id);
 const video = $("video"), preview = $("preview");
 let pctx = null; // 2D rezerva ako WebGL ne radi
 let film = FILMS[1], LUT, stream = null, track = null, facing = "environment", live = false, raf = 0;
+let teleDevice = null, teleInfo = null, teleChecked = false, onTele = false, camList = [];
 let zoom = 1, zoomCur = 1, zoomAnim = 0, focusOK = false, focusTimer = 0, hwZoom = false, hwMax = 1, torchOK = false, torchOn = false, flashOK = false, flashOn = false, imageCapture = null;
 const opts = { date:false, frame:false };
 const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -397,7 +398,7 @@ function initGL(){
 function syncLUT(){ if (glPrev) glPrev.setLUT(LUT); if (glCap) glCap.setLUT(LUT); }
 
 /* deo zuma koji kamera telefona ne može sama, pa se radi isecanjem */
-function digitalPart(z){ return hwZoom ? z / Math.min(z, hwMax) : z; }
+function digitalPart(z){ if (onTele) return Math.max(1, z / 3); return hwZoom ? z / Math.min(z, hwMax) : z; }
 
 function develop(src, sw, sh, no, fromCam){
   let sx = 0, sy = 0, cw = sw, ch = sh;
@@ -488,6 +489,7 @@ function stopLoop(){ live = false; cancelAnimationFrame(raf); }
 
 async function startCamera(){
   stopCamera();
+  const useTele = onTele && teleDevice && facing === "environment";
   if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia){
     toast(window.isSecureContext ? "This browser blocks the camera. Open the link in Chrome or Safari."
                                  : "The camera only works over an https link, not from a file.");
@@ -495,7 +497,8 @@ async function startCamera(){
   }
   try{
     stream = await navigator.mediaDevices.getUserMedia({ audio:false,
-      video:{ facingMode: facing, width:{ideal:4032}, height:{ideal:3024} } });
+      video: useTele ? { deviceId:{exact: teleDevice}, width:{ideal:4032}, height:{ideal:3024} }
+                     : { facingMode: facing, width:{ideal:4032}, height:{ideal:3024} } });
     video.srcObject = stream; await video.play();
     track = stream.getVideoTracks()[0];
     const cap = track.getCapabilities ? track.getCapabilities() : {};
@@ -515,7 +518,9 @@ async function startCamera(){
     }
     $("bFlash").classList.toggle("ghost", !(torchOK || flashOK));
     torchOn = false; $("bFlash").setAttribute("aria-pressed", "false");
-    zoomCur = 1; await setZoom(zoom, true);
+    if (!teleChecked && facing === "environment") await findTele();
+    zoomCur = zoom; await setZoom(zoom, true, true);
+    requestAnimationFrame(() => requestAnimationFrame(() => preview.style.opacity = 1));
     $("ovStart").style.display = "none"; $("zoom").hidden = false;
     store.set("fk_cam", true);
     live = true; loop(); updateCounter();
@@ -528,10 +533,49 @@ function stopCamera(){
 /* Gladak prelaz 1× ↔ 2× (oko 0,35 s) */
 let zBusy = false;
 async function applyHwZoom(v){
-  if (!hwZoom || !track) return;
+  if (!hwZoom || !track || onTele) return;
   try{ await track.applyConstraints({advanced:[{zoom: Math.min(v, hwMax)}]}); }catch(e){ hwZoom = false; }
 }
-async function setZoom(z, instant){
+/* Pronađi telefoto (3×) kameru: aplikacija pita Android koje kamere postoje i koja ima ~3× dužu žižnu daljinu */
+async function findTele(){
+  teleChecked = true;
+  if (!NATIVE || !NATIVE.cameras) return;
+  try{
+    camList = JSON.parse(NATIVE.cameras());
+    const backs = camList.filter(c => c.facing === "back" && c.mm);
+    const main = backs.find(c => c.id === "0") || backs.slice().sort((a, b) => Math.abs(a.mm - 24) - Math.abs(b.mm - 24))[0];
+    if (!main) return;
+    const tele = backs.filter(c => c.mm >= main.mm * 2.2).sort((a, b) => Math.abs(a.mm / main.mm - 3) - Math.abs(b.mm / main.mm - 3))[0];
+    if (!tele) return;
+    const devs = await navigator.mediaDevices.enumerateDevices();
+    const d = devs.find(x => x.kind === "videoinput" && new RegExp("camera2 " + tele.id + "(,|\\b)").test(x.label));
+    if (d){ teleDevice = d.deviceId; teleInfo = tele; }
+  }catch(e){}
+}
+function camReport(){
+  if (!NATIVE || !NATIVE.cameras) return "Camera list is only available in the app.";
+  try{
+    const l = JSON.parse(NATIVE.cameras());
+    return l.map(c => `#${c.id} ${c.facing} ${c.mm || "?"}mm` + (c.physical && c.physical.length ? ` [${c.physical.join(",")}]` : "") + (c.zoomMax ? ` ×${(+c.zoomMax).toFixed(0)}` : "")).join(" · ")
+      + (teleDevice ? ` — 3× lens: #${teleInfo.id}` : " — no 3× lens shared");
+  }catch(e){ return "Couldn’t read cameras."; }
+}
+async function switchLens(tele){
+  onTele = tele;
+  preview.style.opacity = 0;
+  await new Promise(r => setTimeout(r, 160));
+  await startCamera();
+}
+
+async function setZoom(z, instant, noSwitch){
+  if (!noSwitch && facing === "environment" && teleDevice){
+    if (z === 3 && !onTele){ zoom = 3; markZoom(3); return switchLens(true); }
+    if (z < 3 && onTele){ zoom = z; markZoom(z); return switchLens(false); }
+  }
+  return setZoomSmooth(z, instant);
+}
+function markZoom(z){ document.querySelectorAll("#zoom button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.z === z)); }
+async function setZoomSmooth(z, instant){
   zoom = z;
   document.querySelectorAll("#zoom button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.z === z));
   cancelAnimationFrame(zoomAnim);
@@ -599,7 +643,18 @@ function bindTap(){
     focusAt(e.clientX, e.clientY);
   });
 }
-document.querySelectorAll("#zoom button").forEach(b => b.onclick = () => setZoom(+b.dataset.z));
+let toldNoTele = false;
+document.querySelectorAll("#zoom button").forEach(b => {
+  b.onclick = () => {
+    const z = +b.dataset.z;
+    if (z === 3 && NATIVE && !teleDevice && !toldNoTele && facing === "environment"){
+      toldNoTele = true; toast("Your phone doesn’t share the 3× lens with apps — using 3× from the main camera.", 4500);
+    }
+    setZoom(z);
+  };
+  let lp; b.addEventListener("pointerdown", () => { if (+b.dataset.z === 3) lp = setTimeout(() => toast(camReport(), 9000), 800); });
+  ["pointerup","pointerleave","pointercancel"].forEach(ev => b.addEventListener(ev, () => clearTimeout(lp)));
+});
 $("bFlash").onclick = async () => {
   if (!track) return;
   if (flashOK){ flashOn = !flashOn; $("bFlash").setAttribute("aria-pressed", flashOn); toast(flashOn ? "Flash on" : "Flash off"); return; }
@@ -687,7 +742,7 @@ $("fCap").onchange = e => {
 };
 $("bNative").onclick = () => $("fCap").click();
 $("bStart").onclick = startCamera;
-$("bFlip").onclick = () => { facing = facing === "environment" ? "user" : "environment"; if (stream) startCamera(); };
+$("bFlip").onclick = () => { facing = facing === "environment" ? "user" : "environment"; onTele = false; if (zoom === 3 && teleDevice) zoom = 1; if (stream) startCamera(); };
 
 /* ================= ČUVANJE ================= */
 function download(blob, name){
@@ -852,7 +907,7 @@ $("bRollBack").onclick = () => go("sCam");
 
 /* ================= UI ================= */
 let tt;
-function toast(m){ const t = $("toast"); t.textContent = m; t.classList.add("on"); clearTimeout(tt); tt = setTimeout(() => t.classList.remove("on"), 2800); }
+function toast(m, ms){ const t = $("toast"); t.textContent = m; t.classList.add("on"); clearTimeout(tt); tt = setTimeout(() => t.classList.remove("on"), ms || 2800); }
 
 function renderStyles(){
   const box = $("styles"); box.innerHTML = "";

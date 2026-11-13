@@ -7,6 +7,10 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraManager;
+import android.util.Range;
+import android.util.SizeF;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
@@ -29,6 +33,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  * Shows the camera page. The page develops the photos itself; this class only
@@ -83,6 +90,42 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 return false;
             }
+        }
+
+        /** All cameras the phone shares with apps, with 35mm-equivalent focal length (to find the 3x lens). */
+        @JavascriptInterface
+        public String cameras() {
+            JSONArray out = new JSONArray();
+            try {
+                CameraManager cm = (CameraManager) getSystemService(CAMERA_SERVICE);
+                for (String id : cm.getCameraIdList()) {
+                    CameraCharacteristics ch = cm.getCameraCharacteristics(id);
+                    JSONObject o = new JSONObject();
+                    o.put("id", id);
+                    Integer f = ch.get(CameraCharacteristics.LENS_FACING);
+                    o.put("facing", f == null ? "?" : f == CameraCharacteristics.LENS_FACING_BACK ? "back"
+                            : f == CameraCharacteristics.LENS_FACING_FRONT ? "front" : "external");
+                    float[] fl = ch.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS);
+                    SizeF ss = ch.get(CameraCharacteristics.SENSOR_INFO_PHYSICAL_SIZE);
+                    if (fl != null && fl.length > 0 && ss != null) {
+                        double diag = Math.hypot(ss.getWidth(), ss.getHeight());
+                        o.put("mm", Math.round(fl[0] * 43.27 / diag));
+                    }
+                    if (Build.VERSION.SDK_INT >= 28) {
+                        JSONArray ph = new JSONArray();
+                        for (String pid : ch.getPhysicalCameraIds()) ph.put(pid);
+                        o.put("physical", ph);
+                    }
+                    if (Build.VERSION.SDK_INT >= 30) {
+                        Range<Float> zr = ch.get(CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE);
+                        if (zr != null) o.put("zoomMax", zr.getUpper());
+                    }
+                    out.put(o);
+                }
+            } catch (Exception e) {
+                // vrati ono što je pronađeno
+            }
+            return out.toString();
         }
 
         @JavascriptInterface
