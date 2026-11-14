@@ -144,6 +144,16 @@ public class MainActivity extends Activity {
             }
         }
 
+        /** Screen flash for selfies: full brightness (1), or back to the system setting (-1). */
+        @JavascriptInterface
+        public void setBrightness(final float v) {
+            runOnUiThread(() -> {
+                WindowManager.LayoutParams lp = getWindow().getAttributes();
+                lp.screenBrightness = v < 0 ? WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE : Math.min(1f, v);
+                getWindow().setAttributes(lp);
+            });
+        }
+
         @JavascriptInterface
         public boolean hasDrive() {
             return isInstalled(DRIVE);
