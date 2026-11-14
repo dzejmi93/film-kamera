@@ -12,7 +12,6 @@ An Android film camera with six looks: CineStill 800T, Portra 800, Portra 400, E
 - Preview and developing run on the GPU (WebGL): per-hue color (like a 3D LUT), organic color grain and halation around lights.
 - Change the film after shooting: the original is kept, so any photo can be re-developed with another film.
 - Swipe up/down on the viewfinder for exposure, 3 s / 10 s timer, screen flash for selfies, shutter and film-advance sound.
-- "Imperfect" mode: small random exposure/color shifts and the occasional light leak, like a disposable camera.
 
 ## Download
 
