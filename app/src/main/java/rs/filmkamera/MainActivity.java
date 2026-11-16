@@ -15,6 +15,11 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Base64;
 import android.view.KeyEvent;
+import android.view.OrientationEventListener;
+import android.view.View;
+import android.widget.FrameLayout;
+import android.hardware.camera2.CameraManager;
+import java.io.ByteArrayInputStream;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
@@ -46,9 +51,14 @@ public class MainActivity extends Activity {
     private static final int REQ_STORAGE = 2;
 
     private WebView web;
+    private CamView cam;
+    private FrameLayout root;
+    private OrientationEventListener orient;
+    private boolean camWanted, camFront;
     private PermissionRequest pending;
     private ValueCallback<Uri[]> fileCallback;
     private static final int REQ_FILES = 3;
+    private static final int REQ_NATIVE_CAM = 4;
 
     public class Bridge {
         /** Saves a JPEG (base64) to Pictures/Film Kamera. Returns true when saved. */
@@ -160,6 +170,50 @@ public class MainActivity extends Activity {
             runOnUiThread(() -> startActivity(new Intent(MainActivity.this, LensTestActivity.class)));
         }
 
+        // ---------- prava Android kamera ----------
+        @JavascriptInterface
+        public boolean camAvailable() {
+            return CamView.supported((CameraManager) getSystemService(CAMERA_SERVICE));
+        }
+
+        @JavascriptInterface
+        public void camStart(final boolean front) {
+            runOnUiThread(() -> {
+                camWanted = true; camFront = front;
+                if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                    requestPermissions(new String[]{Manifest.permission.CAMERA}, REQ_NATIVE_CAM);
+                    return;
+                }
+                cam.start(front);
+            });
+        }
+
+        @JavascriptInterface
+        public void camStop() {
+            runOnUiThread(() -> { camWanted = false; cam.stop(); cam.setVisibility(View.INVISIBLE); });
+        }
+
+        /** Where the viewfinder is on the page (CSS pixels). */
+        @JavascriptInterface
+        public void camRect(final float x, final float y, final float w, final float h, final boolean visible) {
+            runOnUiThread(() -> {
+                float d = getResources().getDisplayMetrics().density;
+                FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(Math.max(1, Math.round(w * d)), Math.max(1, Math.round(h * d)));
+                lp.leftMargin = Math.round(x * d);
+                lp.topMargin = Math.round(y * d);
+                cam.setLayoutParams(lp);
+                cam.setVisibility(visible ? View.VISIBLE : View.INVISIBLE);
+            });
+        }
+
+        @JavascriptInterface public void camFilm(String json) { cam.setFilm(json); }
+        @JavascriptInterface public void camZoom(float z) { cam.setZoom(z); }
+        @JavascriptInterface public void camEV(float ev) { cam.setEV(ev); }
+        @JavascriptInterface public void camFlash(boolean on) { cam.setFlash(on); }
+        @JavascriptInterface public void camFocus(float u, float v) { cam.focus(u, v); }
+        @JavascriptInterface public void camCapture() { cam.capture(); }
+        @JavascriptInterface public String camInfo() { return cam.info(); }
+
         @JavascriptInterface
         public boolean hasDrive() {
             return isInstalled(DRIVE);
@@ -221,7 +275,7 @@ public class MainActivity extends Activity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         web = new WebView(this);
-        web.setBackgroundColor(Color.BLACK);
+        web.setBackgroundColor(Color.TRANSPARENT);
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
@@ -236,6 +290,13 @@ public class MainActivity extends Activity {
                 Uri u = req.getUrl();
                 if (!HOST.equals(u.getHost())) return null;
                 String path = u.getPath();
+                if (path != null && path.startsWith("/__photo/")) {
+                    try {
+                        byte[] b = cam.photos.remove(Integer.parseInt(path.substring(9)));
+                        if (b != null) return new WebResourceResponse("image/jpeg", null, new ByteArrayInputStream(b));
+                    } catch (Exception ignored) {}
+                    return new WebResourceResponse("text/plain", "UTF-8", 404, "Not found", null, null);
+                }
                 if (path == null || path.equals("/") || path.isEmpty()) path = "/index.html";
                 try {
                     InputStream in = getAssets().open(path.substring(1));
@@ -284,7 +345,26 @@ public class MainActivity extends Activity {
         });
 
         web.addJavascriptInterface(new Bridge(), "Native");
-        setContentView(web);
+        cam = new CamView(this);
+        cam.setVisibility(View.INVISIBLE);
+        cam.setListener(new CamView.PhotoListener() {
+            @Override public void onPhoto(int id) { runOnUiThread(() -> web.evaluateJavascript("window.__nativePhoto&&window.__nativePhoto(" + id + ")", null)); }
+            @Override public void onError(String m) {
+                final String q = m == null ? "" : m.replace("\\", " ").replace("'", " ").replace("\n", " ");
+                runOnUiThread(() -> web.evaluateJavascript("window.__nativeCamError&&window.__nativeCamError('" + q + "')", null));
+            }
+        });
+        root = new FrameLayout(this);
+        root.setBackgroundColor(Color.BLACK);
+        root.addView(cam, new FrameLayout.LayoutParams(1, 1));
+        root.addView(web, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        setContentView(root);
+        orient = new OrientationEventListener(this) {
+            @Override public void onOrientationChanged(int deg) {
+                if (deg == ORIENTATION_UNKNOWN) return;
+                cam.deviceRotation = ((deg + 45) / 90 * 90) % 360;
+            }
+        };
         web.loadUrl(START);
     }
 
@@ -328,6 +408,11 @@ public class MainActivity extends Activity {
     @Override
     public void onRequestPermissionsResult(int code, String[] perms, int[] results) {
         super.onRequestPermissionsResult(code, perms, results);
+        if (code == REQ_NATIVE_CAM) {
+            if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED && camWanted) cam.start(camFront);
+            else web.evaluateJavascript("window.__nativeCamError&&window.__nativeCamError('Camera permission denied')", null);
+            return;
+        }
         if (code == REQ_CAMERA && pending != null) {
             if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) grantCamera(pending);
             else pending.deny();
@@ -358,11 +443,15 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         if (web != null) { web.onResume(); web.resumeTimers(); }
+        if (cam != null) cam.onResume();
+        if (orient != null && orient.canDetectOrientation()) orient.enable();
     }
 
     @Override
     protected void onPause() {
         if (web != null) { web.onPause(); web.pauseTimers(); }
+        if (cam != null) { cam.stop(); cam.onPause(); }
+        if (orient != null) orient.disable();
         super.onPause();
     }
 
