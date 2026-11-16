@@ -33,6 +33,12 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".LensTestActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:label="Lens test" />
+
         <provider
             android:name=".ShareProvider"
             android:authorities="rs.filmkamera.share"

@@ -805,6 +805,12 @@ function bindTap(){
   });
 }
 document.querySelectorAll("#zoom button").forEach(b => b.onclick = () => setZoom(+b.dataset.z));
+/* Skriveno: drži 2× oko sekunde za test telefoto objektiva (prava Android kamera) */
+(() => {
+  const b = document.querySelector('#zoom button[data-z="2"]'); let lp;
+  b.addEventListener("pointerdown", () => { lp = setTimeout(() => { if (NATIVE && NATIVE.openLensTest){ stopCamera(); NATIVE.openLensTest(); } else toast("Lens test works only in the app."); }, 900); });
+  ["pointerup","pointerleave","pointercancel"].forEach(ev => b.addEventListener(ev, () => clearTimeout(lp)));
+})();
 let frontFlash = false;
 $("bFlash").onclick = async () => {
   if (!track) return;

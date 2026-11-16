@@ -154,6 +154,12 @@ public class MainActivity extends Activity {
             });
         }
 
+        /** Opens the lens test screen (real Android camera, 1x/2x/3x). */
+        @JavascriptInterface
+        public void openLensTest() {
+            runOnUiThread(() -> startActivity(new Intent(MainActivity.this, LensTestActivity.class)));
+        }
+
         @JavascriptInterface
         public boolean hasDrive() {
             return isInstalled(DRIVE);
