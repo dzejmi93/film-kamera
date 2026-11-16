@@ -42,6 +42,11 @@
   .stamp.on{display:block}
   .zoom{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:4px;padding:4px;border-radius:30px;
     background:rgba(0,0,0,.5);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  /* prava Android kamera iza stranice: tražilo je prozirno, ostatak ekrana crn */
+  html.nc, html.nc body{background:transparent}
+  html.nc .vf{background:transparent;box-shadow:0 0 0 3000px #000}
+  html.nc #preview{visibility:hidden}
+  html.nc .top, html.nc .styles, html.nc .bottom, html.nc .opts{position:relative;z-index:1}
   .gridov{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;display:none}
   .gridov.on{display:block}
   .gridov line{stroke:rgba(255,255,255,.5);stroke-width:1;vector-effect:non-scaling-stroke}
@@ -186,6 +191,7 @@
     <div class="zoom" id="zoom" hidden>
       <button data-z="1" aria-pressed="true">1×</button>
       <button data-z="2" aria-pressed="false">2×</button>
+      <button data-z="3" aria-pressed="false" id="z3" hidden>3×</button>
     </div>
     <div class="overlay" id="ovStart">
       <h2>Point,<br><i>shoot, keep.</i></h2>
@@ -559,10 +565,10 @@ function initGL(){
   try{ glCapCanvas = document.createElement("canvas"); glCap = makeGL(glCapCanvas, true); }catch(e){ glCap = null; }
   syncLUT();
 }
-function syncLUT(){ if (glPrev) glPrev.setLUT(LUT); if (glCap) glCap.setLUT(LUT); }
+function syncLUT(){ if (glPrev) glPrev.setLUT(LUT); if (glCap) glCap.setLUT(LUT); if (NC) syncNativeFilm(); }
 
 /* deo zuma koji kamera telefona ne može sama, pa se radi isecanjem */
-function digitalPart(z){ return hwZoom ? z / Math.min(z, hwMax) : z; }
+function digitalPart(z){ if (NC) return 1; return hwZoom ? z / Math.min(z, hwMax) : z; }
 
 /* Original: isečen (zum), okrenut (selfi) i umanjen kadar, pre filma. Čuva se da bi slika kasnije mogla da se razvije drugim filmom. */
 function makeBase(src, sw, sh, fromCam){
@@ -634,6 +640,7 @@ function dbClear(){ return new Promise(res => { if (!db) return res(); const q =
 
 let used = store.get("fk_used", 0);   // redni broj poslednjeg snimka (za okvir filma)
 function updateCounter(){
+  if (NC) return;
   if (stream && !live && $("sCam").classList.contains("on")) { live = true; loop(); }
 }
 
@@ -666,8 +673,53 @@ function loop(){
 }
 function stopLoop(){ live = false; cancelAnimationFrame(raf); }
 
+/* ===== Prava Android kamera (Camera2) — pregled crta Android, stranica samo upravlja ===== */
+let NC = false, ncInfo = null, ncFails = 0;
+function sendRect(){
+  if (!NC || stream !== "native") return;
+  const r = $("vf").getBoundingClientRect();
+  NATIVE.camRect(r.left, r.top, r.width, r.height, $("sCam").classList.contains("on"));
+}
+function syncNativeFilm(){
+  if (!NC) return;
+  const f = film;
+  NATIVE.camFilm(JSON.stringify({ lut: [...LUT[0], ...LUT[1], ...LUT[2]], sat: f.sat, bw: !!f.bw, grain: f.grain, grainColor: f.grainColor || 0,
+    vignette: f.vignette, halation: f.halation || 0, halThresh: f.halThresh || .72, hues: f.hues || [] }));
+}
+function startNative(){
+  stream = "native"; track = null; live = true;
+  document.documentElement.classList.add("nc");
+  NATIVE.camStart(facing === "user");
+  syncNativeFilm(); NATIVE.camEV(ev); NATIVE.camFlash(flashOn && facing !== "user");
+  hwZoom = true; hwMax = 10; evHW = true; focusOK = true; zoomCur = zoom;
+  NATIVE.camZoom(zoom); markZoom(zoom);
+  $("ovStart").style.display = "none"; $("zoom").hidden = false;
+  requestAnimationFrame(sendRect);
+  setTimeout(() => {
+    try{ ncInfo = JSON.parse(NATIVE.camInfo()); }catch(e){ ncInfo = {}; }
+    flashOK = !!ncInfo.hasFlash;
+    evRange = { min: ncInfo.evMin || -2, max: ncInfo.evMax || 2, step: ncInfo.evStep || .1 };
+    $("bFlash").classList.toggle("ghost", !(flashOK || facing === "user"));
+    $("bFlash").setAttribute("aria-pressed", facing === "user" ? !!frontFlash : !!flashOn);
+    sendRect();
+  }, 500);
+  store.set("fk_cam", true);
+}
+window.__nativeCamError = msg => {
+  if (/permission/i.test(msg)){ toast("Camera access is off. Allow it in settings."); return; }
+  ncFails++;
+  if (stream === "native" && ncFails >= 2){
+    // prava kamera ne radi na ovom telefonu: vrati se na kameru iz pregledača
+    NC = false; NATIVE.camStop(); stream = null; document.documentElement.classList.remove("nc");
+    toast("Switching to the basic camera."); setTimeout(startCamera, 300);
+  } else if (stream === "native"){ setTimeout(() => { if (stream === "native") startNative(); }, 600); }
+};
+window.addEventListener("resize", () => requestAnimationFrame(sendRect));
+function markZoom(z){ document.querySelectorAll("#zoom button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.z === z)); }
+
 async function startCamera(){
   stopCamera();
+  if (NC){ startNative(); return; }
   if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia){
     toast(window.isSecureContext ? "This browser blocks the camera. Open the link in Chrome or Safari."
                                  : "The camera only works over an https link, not from a file.");
@@ -705,6 +757,7 @@ async function startCamera(){
 }
 function stopCamera(){
   stopLoop();
+  if (stream === "native"){ NATIVE.camStop(); stream = null; live = false; document.documentElement.classList.remove("nc"); return; }
   if (stream){ stream.getTracks().forEach(t => t.stop()); stream = null; track = null; }
 }
 /* Gladak prelaz 1× ↔ 2× (oko 0,35 s) */
@@ -714,6 +767,7 @@ async function applyHwZoom(v){
   try{ await track.applyConstraints({advanced:[{zoom: Math.min(v, hwMax)}]}); }catch(e){ hwZoom = false; }
 }
 async function setZoom(z, instant){
+  if (NC && stream === "native"){ zoom = z; zoomCur = z; markZoom(z); NATIVE.camZoom(z); return; }
   zoom = z;
   document.querySelectorAll("#zoom button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.z === z));
   cancelAnimationFrame(zoomAnim);
@@ -746,6 +800,14 @@ function tapToVideo(clientX, clientY){
   return { x: c01(u), y: c01(v), px: clientX - r.left, py: clientY - r.top };
 }
 async function focusAt(clientX, clientY){
+  if (NC && stream === "native"){
+    const r = $("vf").getBoundingClientRect(), f = $("focus");
+    f.style.left = (clientX - r.left) + "px"; f.style.top = (clientY - r.top) + "px";
+    f.classList.remove("on"); void f.offsetWidth; f.classList.add("on");
+    if (navigator.vibrate) navigator.vibrate(6);
+    NATIVE.camFocus((clientX - r.left) / r.width, (clientY - r.top) / r.height);
+    return;
+  }
   if (!track || !live) return;
   const p = tapToVideo(clientX, clientY), f = $("focus");
   f.style.left = p.px + "px"; f.style.top = p.py + "px";
@@ -776,6 +838,7 @@ function showEV(){
   if (Math.abs(ev) < .05) evTimer = setTimeout(() => p.classList.remove("on"), 1200);
 }
 async function applyEV(){
+  if (NC && stream === "native"){ NATIVE.camEV(ev); return; }
   if (!evHW || !track || evBusy) return;
   evBusy = true;
   const r = evRange, v = Math.max(r.min, Math.min(r.max, Math.round(ev / (r.step || .1)) * (r.step || .1)));
@@ -813,8 +876,9 @@ document.querySelectorAll("#zoom button").forEach(b => b.onclick = () => setZoom
 })();
 let frontFlash = false;
 $("bFlash").onclick = async () => {
-  if (!track) return;
+  if (!track && stream !== "native") return;
   if (facing === "user"){ frontFlash = !frontFlash; $("bFlash").setAttribute("aria-pressed", frontFlash); toast(frontFlash ? "Screen flash on" : "Screen flash off"); return; }
+  if (stream === "native"){ if (!flashOK) return; flashOn = !flashOn; NATIVE.camFlash(flashOn); $("bFlash").setAttribute("aria-pressed", flashOn); toast(flashOn ? "Flash on" : "Flash off"); return; }
   if (flashOK){ flashOn = !flashOn; $("bFlash").setAttribute("aria-pressed", flashOn); toast(flashOn ? "Flash on" : "Flash off"); return; }
   if (!torchOK) return;
   torchOn = !torchOn;
@@ -907,7 +971,22 @@ function tickSound(last){
   o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + .13);
 }
 
+function grabNative(){
+  return new Promise(resolve => {
+    const to = setTimeout(() => { window.__nativePhoto = null; resolve(null); }, 9000);
+    window.__nativePhoto = async id => {
+      clearTimeout(to); window.__nativePhoto = null;
+      try{
+        const b = await (await fetch(`/__photo/${id}`)).blob();
+        const bmp = await createImageBitmap(b);
+        resolve({ src: bmp, w: bmp.width, h: bmp.height });
+      }catch(e){ resolve(null); }
+    };
+    NATIVE.camCapture();
+  });
+}
 async function grabFrame(){
+  if (stream === "native") return grabNative();
   const vw = video.videoWidth, vh = video.videoHeight;
   if (imageCapture){
     try{
@@ -951,6 +1030,7 @@ async function takeShot(){
     if (!screenFlash){ const fl = $("flash"); fl.classList.add("on"); setTimeout(() => fl.classList.remove("on"), 70); }
     if (navigator.vibrate) navigator.vibrate(15);
     const g = await grabFrame();
+    if (!g){ toast("Couldn’t take the photo. Try again."); if (screenFlash){ $("sflash").classList.remove("on"); if (NATIVE && NATIVE.setBrightness) NATIVE.setBrightness(-1); } return; }
     if (screenFlash){ $("sflash").classList.remove("on"); if (NATIVE && NATIVE.setBrightness) NATIVE.setBrightness(-1); }
     const res = develop(g.src, g.w, g.h, no, true);
     if (g.src !== video && g.src.close) g.src.close();
@@ -1195,7 +1275,8 @@ function go(id){
   if (cur && cur.id !== id && cur.id !== "sPhoto") prev = cur.id;
   document.querySelectorAll(".screen").forEach(s => s.classList.toggle("on", s.id === id));
   if (id === "sRoll") renderGrid(); else if (selecting) exitSelect();
-  if (id === "sCam") updateCounter(); else { stopLoop(); cancelCountdown(); }
+  if (id === "sCam"){ if (NC){ if (stream !== "native" && store.get("fk_cam", false)) startCamera(); else sendRect(); } else updateCounter(); }
+  else { stopLoop(); cancelCountdown(); if (NC && stream === "native") stopCamera(); }
 }
 function back(){ go(prev === "sRoll" ? "sRoll" : "sCam"); }
 $("bPhotoBack").onclick = back;
@@ -1271,6 +1352,8 @@ function bindGrid(){
 (async function init(){
   Object.assign(opts, store.get("fk_opts", {}));
   film = FILMS.find(f => f.id === store.get("fk_film", "portra400")) || FILMS.find(f => f.id === "portra400"); LUT = buildLUT(film);
+  try{ NC = !!(NATIVE && NATIVE.camAvailable && NATIVE.camAvailable()); }catch(e){ NC = false; }
+  if (NC) $("z3").hidden = false;
   initGL();
   bindTap();
   $("stamp").textContent = dateText(); $("stamp").classList.toggle("on", opts.date);

@@ -5,6 +5,7 @@ An Android film camera with six looks: CineStill 800T, Portra 800, Portra 400, E
 - Photos develop on the phone. The app has no server and sends nothing to the internet.
 - **Save to gallery** puts photos in **Pictures/Kadar**.
 - **Google Drive** opens Drive with the photo, so it goes straight to your own account.
+- Real Android camera (Camera2) with the film look drawn live on the GPU; 1×, 2× and 3× through the telephoto lens.
 - Unlimited shots, smooth 1×/2× zoom, tap to focus, flash, date stamp, film border and composition grid (rule of thirds / golden ratio).
 - The volume buttons take a photo, like a real camera.
 - Album grouped by day: Upload photos from the gallery, Send to Google Photos / Drive / other apps, Save to gallery.
