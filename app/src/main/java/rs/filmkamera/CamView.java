@@ -10,6 +10,8 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.CaptureResult;
+import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.MeteringRectangle;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
@@ -69,6 +71,14 @@ public class CamView extends GLSurfaceView implements GLSurfaceView.Renderer, Su
     private float evStep = 1f;
     private boolean hasFlash;
     private int maxAfRegions, maxAeRegions;
+    // ISO filma: slika se pravi na ISO filma, a brzina zatvarača se računa iz merenja
+    private boolean manualOK;
+    private Range<Integer> isoRange;
+    private Range<Long> expRange;
+    private volatile int filmIso = 0;
+    private volatile long lastExp = 0;
+    private volatile int lastIso = 0;
+    private static final long MAX_HANDHELD_NS = 66_000_000L;   // ~1/15 s
     private Size previewSize = new Size(1440, 1080);
     private float zoom = 1f, zoomShown = 1f;
     private int evSteps = 0;
@@ -145,6 +155,7 @@ public class CamView extends GLSurfaceView implements GLSurfaceView.Renderer, Su
             vignette = (float) o.optDouble("vignette", 0);
             halation = (float) o.optDouble("halation", 0);
             halThresh = (float) o.optDouble("halThresh", .72);
+            filmIso = o.optInt("iso", 0);
             JSONArray h = o.optJSONArray("hues");
             for (int i = 0; i < 7; i++) {
                 if (h != null && i < h.length()) {
@@ -216,6 +227,13 @@ public class CamView extends GLSurfaceView implements GLSurfaceView.Renderer, Su
             Integer me = ch.get(CameraCharacteristics.CONTROL_MAX_REGIONS_AE);
             maxAfRegions = ma == null ? 0 : ma;
             maxAeRegions = me == null ? 0 : me;
+            int[] caps = ch.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES);
+            manualOK = false;
+            if (caps != null) for (int c : caps) if (c == CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_MANUAL_SENSOR) manualOK = true;
+            isoRange = ch.get(CameraCharacteristics.SENSOR_INFO_SENSITIVITY_RANGE);
+            expRange = ch.get(CameraCharacteristics.SENSOR_INFO_EXPOSURE_TIME_RANGE);
+            if (isoRange == null || expRange == null) manualOK = false;
+            lastExp = 0; lastIso = 0;
 
             StreamConfigurationMap map = ch.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             Size pv = new Size(1440, 1080), jp = new Size(4000, 3000);
@@ -290,9 +308,19 @@ public class CamView extends GLSurfaceView implements GLSurfaceView.Renderer, Su
         try {
             fill(preview, zoomShown);
             preview.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_IDLE);
-            session.setRepeatingRequest(preview.build(), null, bg);
+            session.setRepeatingRequest(preview.build(), meter, bg);
         } catch (Exception ignored) {}
     }
+
+    /** Pamti šta je automatska ekspozicija izmerila (vreme × ISO), za snimak na ISO filma. */
+    private final CameraCaptureSession.CaptureCallback meter = new CameraCaptureSession.CaptureCallback() {
+        @Override
+        public void onCaptureCompleted(CameraCaptureSession s, CaptureRequest r, TotalCaptureResult res) {
+            Long e = res.get(CaptureResult.SENSOR_EXPOSURE_TIME);
+            Integer i = res.get(CaptureResult.SENSOR_SENSITIVITY);
+            if (e != null && i != null && e > 0 && i > 0) { lastExp = e; lastIso = i; }
+        }
+    };
 
     private void fill(CaptureRequest.Builder b, float z) {
         b.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
@@ -406,7 +434,21 @@ public class CamView extends GLSurfaceView implements GLSurfaceView.Renderer, Su
                 b.addTarget(previewSurface);
                 fill(b, zoomShown);
                 if (focusRegion == null) b.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
-                b.set(CaptureRequest.JPEG_QUALITY, (byte) 95);
+                b.set(CaptureRequest.JPEG_QUALITY, (byte) 97);
+                // oštrina: puno izoštravanje kamere, a slabije uklanjanje šuma (zrno filma ionako dolazi preko)
+                b.set(CaptureRequest.EDGE_MODE, CaptureRequest.EDGE_MODE_HIGH_QUALITY);
+                b.set(CaptureRequest.NOISE_REDUCTION_MODE, CaptureRequest.NOISE_REDUCTION_MODE_FAST);
+                if (manualOK && filmIso > 0 && lastExp > 0 && lastIso > 0) {
+                    // ista količina svetla kao automatika, ali na ISO filma: ISO 100 traži duže vreme, ISO 800 kraće
+                    int iso = Math.max(isoRange.getLower(), Math.min(isoRange.getUpper(), filmIso));
+                    double light = (double) lastExp * lastIso;
+                    long t = Math.round(light / iso);
+                    t = Math.max(expRange.getLower(), Math.min(Math.min(expRange.getUpper(), MAX_HANDHELD_NS), t));
+                    b.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
+                    b.set(CaptureRequest.SENSOR_SENSITIVITY, iso);
+                    b.set(CaptureRequest.SENSOR_EXPOSURE_TIME, t);
+                    b.set(CaptureRequest.SENSOR_FRAME_DURATION, t);
+                }
                 int dev = deviceRotation;
                 int jo = front ? (sensorOrientation - dev + 360) % 360 : (sensorOrientation + dev) % 360;
                 b.set(CaptureRequest.JPEG_ORIENTATION, jo);
@@ -444,7 +486,7 @@ public class CamView extends GLSurfaceView implements GLSurfaceView.Renderer, Su
             "#extension GL_OES_EGL_image_external : require\n" +
             "precision highp float;varying vec2 v;varying vec2 tc;\n" +
             "uniform samplerExternalOES S;uniform sampler2D L,HT;uniform vec2 R,HR;\n" +
-            "uniform float SAT,BW,G,GC,VG,SEED,HAL,HTH;uniform float HC[7];uniform vec3 HB[7];\n" +
+            "uniform float SAT,BW,G,GC,VG,SEED,HAL,HTH,SHP;uniform vec2 TX;uniform float HC[7];uniform vec3 HB[7];\n" +
             "float h(vec2 q){return fract(sin(dot(q,vec2(12.9898,78.233)))*43758.5453);}\n" +
             "float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1.,0.)),f.x),mix(h(i+vec2(0.,1.)),h(i+vec2(1.,1.)),f.x),f.y);}\n" +
             "float lut(float x,int ch){vec4 t=texture2D(L,vec2((clamp(x,0.,1.)*255.+.5)/256.,.5));return ch==0?t.r:(ch==1?t.g:t.b);}\n" +
@@ -454,6 +496,7 @@ public class CamView extends GLSurfaceView implements GLSurfaceView.Renderer, Su
             "float br(vec3 x){return max(0.,(dot(x,vec3(.299,.587,.114))-HTH)/(1.-HTH));}\n" +
             "void main(){\n" +
             "  vec3 c=texture2D(S,tc).rgb, o;\n" +
+            "  if(SHP>0.){ vec3 bl=(texture2D(S,tc+vec2(TX.x,0.)).rgb+texture2D(S,tc-vec2(TX.x,0.)).rgb+texture2D(S,tc+vec2(0.,TX.y)).rgb+texture2D(S,tc-vec2(0.,TX.y)).rgb)*.25; c=clamp(c+(c-bl)*SHP,0.,1.); }\n" +
             "  if(BW>.5){ float y=dot(c,vec3(.30,.59,.11)); o=vec3(lut(y,0)); }\n" +
             "  else { o=vec3(lut(c.r,0),lut(c.g,1),lut(c.b,2)); float l=dot(o,vec3(.299,.587,.114)); o=l+(o-l)*SAT;\n" +
             "    vec3 hv=rgb2hsv(clamp(o,0.,1.)); float hd=hv.x*360., sh=0., sm=0., lm=0., sw=smoothstep(.04,.3,hv.y);\n" +
@@ -607,6 +650,8 @@ public class CamView extends GLSurfaceView implements GLSurfaceView.Renderer, Su
         GLES20.glUniform1f(GLES20.glGetUniformLocation(pr, "SEED"), (float) (Math.random() * 100));
         GLES20.glUniform1f(GLES20.glGetUniformLocation(pr, "HAL"), hal);
         GLES20.glUniform1f(GLES20.glGetUniformLocation(pr, "HTH"), halThresh);
+        GLES20.glUniform1f(GLES20.glGetUniformLocation(pr, "SHP"), .45f);
+        GLES20.glUniform2f(GLES20.glGetUniformLocation(pr, "TX"), 1f / previewSize.getWidth(), 1f / previewSize.getHeight());
         GLES20.glUniform1fv(GLES20.glGetUniformLocation(pr, "HC"), 7, new float[]{0, 30, 60, 120, 180, 225, 300}, 0);
         GLES20.glUniform3fv(GLES20.glGetUniformLocation(pr, "HB"), 7, hues, 0);
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);

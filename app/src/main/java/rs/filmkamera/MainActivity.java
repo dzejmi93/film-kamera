@@ -15,6 +15,10 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Base64;
 import android.view.KeyEvent;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.os.Looper;
 import android.view.OrientationEventListener;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -59,6 +63,39 @@ public class MainActivity extends Activity {
     private ValueCallback<Uri[]> fileCallback;
     private static final int REQ_FILES = 3;
     private static final int REQ_NATIVE_CAM = 4;
+    private static final int REQ_LOC = 5;
+    // lokacija za fotografije (ostaje na telefonu, upisuje se samo u EXIF slike)
+    private boolean locWanted;
+    private Location bestLoc;
+    private final LocationListener locListener = new LocationListener() {
+        @Override public void onLocationChanged(Location l) { take(l); }
+        @Override public void onStatusChanged(String p, int s, Bundle b) {}
+        @Override public void onProviderEnabled(String p) {}
+        @Override public void onProviderDisabled(String p) {}
+    };
+    private synchronized void take(Location l) {
+        if (l == null) return;
+        if (bestLoc == null || l.getTime() > bestLoc.getTime() + 30000 || l.getAccuracy() <= bestLoc.getAccuracy()) bestLoc = l;
+    }
+    @SuppressWarnings("MissingPermission")
+    private void startLoc() {
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, REQ_LOC);
+            return;
+        }
+        LocationManager lm = (LocationManager) getSystemService(LOCATION_SERVICE);
+        for (String p : new String[]{LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER}) {
+            try {
+                if (!lm.isProviderEnabled(p)) continue;
+                take(lm.getLastKnownLocation(p));
+                lm.requestLocationUpdates(p, 15000, 20, locListener, Looper.getMainLooper());
+            } catch (Exception ignored) {}
+        }
+    }
+    private void stopLoc() {
+        try { ((LocationManager) getSystemService(LOCATION_SERVICE)).removeUpdates(locListener); } catch (Exception ignored) {}
+    }
 
     public class Bridge {
         /** Saves a JPEG (base64) to Pictures/Film Kamera. Returns true when saved. */
@@ -213,6 +250,17 @@ public class MainActivity extends Activity {
         @JavascriptInterface public void camFocus(float u, float v) { cam.focus(u, v); }
         @JavascriptInterface public void camCapture() { cam.capture(); }
         @JavascriptInterface public String camInfo() { return cam.info(); }
+
+        @JavascriptInterface public void locStart() { runOnUiThread(() -> { locWanted = true; startLoc(); }); }
+        @JavascriptInterface public void locStop() { runOnUiThread(() -> { locWanted = false; stopLoc(); }); }
+        @JavascriptInterface
+        public String lastLocation() {
+            Location l;
+            synchronized (MainActivity.this) { l = bestLoc; }
+            if (l == null) return "";
+            return "{\"lat\":" + l.getLatitude() + ",\"lon\":" + l.getLongitude()
+                    + (l.hasAltitude() ? ",\"alt\":" + l.getAltitude() : "") + ",\"time\":" + l.getTime() + "}";
+        }
 
         @JavascriptInterface
         public boolean hasDrive() {
@@ -408,6 +456,13 @@ public class MainActivity extends Activity {
     @Override
     public void onRequestPermissionsResult(int code, String[] perms, int[] results) {
         super.onRequestPermissionsResult(code, perms, results);
+        if (code == REQ_LOC) {
+            boolean ok = false;
+            for (int r : results) if (r == PackageManager.PERMISSION_GRANTED) ok = true;
+            if (ok && locWanted) startLoc();
+            else web.evaluateJavascript("toast('Location is off. Allow it in settings.')", null);
+            return;
+        }
         if (code == REQ_NATIVE_CAM) {
             if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED && camWanted) cam.start(camFront);
             else web.evaluateJavascript("window.__nativeCamError&&window.__nativeCamError('Camera permission denied')", null);
@@ -445,6 +500,7 @@ public class MainActivity extends Activity {
         if (web != null) { web.onResume(); web.resumeTimers(); }
         if (cam != null) cam.onResume();
         if (orient != null && orient.canDetectOrientation()) orient.enable();
+        if (locWanted) startLoc();
     }
 
     @Override
@@ -452,6 +508,7 @@ public class MainActivity extends Activity {
         if (web != null) { web.onPause(); web.pauseTimers(); }
         if (cam != null) { cam.stop(); cam.onPause(); }
         if (orient != null) orient.disable();
+        stopLoc();
         super.onPause();
     }
 

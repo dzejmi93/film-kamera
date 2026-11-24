@@ -34,7 +34,16 @@
   .counter{text-align:center;line-height:1}
   .counter b{display:block;font-family:Fraunces,serif;font-weight:400;font-size:30px;font-variation-settings:"opsz" 72}
   .counter span{font-size:10px;letter-spacing:.16em;color:var(--mute)}
-  .vf{flex:1;min-height:0;position:relative;margin:0 12px;border-radius:26px;overflow:hidden;background:var(--s1)}
+  .vfbox{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;margin:0 12px}
+  .vf{flex:none;width:100%;height:100%;position:relative;border-radius:26px;overflow:hidden;background:var(--s1);transition:width .2s,height .2s}
+  .evbar{position:relative;height:54px;margin-top:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;touch-action:none}
+  .evbar[hidden]{display:none}
+  .evval{font-size:13px;font-weight:600;color:var(--orange);margin-bottom:4px;display:flex;gap:6px;align-items:center}
+  .ruler{position:relative;width:100%;height:26px;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 25%,#000 75%,transparent)}
+  .ticks{position:absolute;top:0;left:50%;height:100%}
+  .ticks i{position:absolute;top:6px;width:1.5px;height:12px;background:#777;transform:translateX(-50%)}
+  .ticks i.maj{top:2px;height:20px;background:#ddd}
+  .ruler .mark{position:absolute;left:50%;top:0;width:2px;height:100%;background:var(--orange);transform:translateX(-50%)}
   .vf canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
   #video{display:none}
   .stamp{position:absolute;right:16px;bottom:16px;font-family:"Space Mono",monospace;font-size:13px;color:var(--orange);
@@ -180,6 +189,7 @@
     </button>
   </div>
 
+  <div class="vfbox" id="vfbox">
   <div class="vf" id="vf">
     <video id="video" playsinline muted autoplay></video>
     <canvas id="preview"></canvas>
@@ -202,7 +212,12 @@
 
   </div>
 
+  </div>
   <div class="styles" id="styles"></div>
+  <div class="evbar" id="evbar" hidden>
+    <div class="evval"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span id="evval">0.0</span></div>
+    <div class="ruler" id="ruler"><div class="ticks" id="ticks"></div><div class="mark"></div></div>
+  </div>
 
   <div class="bottom">
     <button class="circ" id="bFlip" aria-label="Promeni kameru">
@@ -216,6 +231,9 @@
     <button class="chip" id="oFrame" aria-pressed="false">Film border</button>
     <button class="chip" id="oGrid" aria-pressed="false">Grid</button>
     <button class="chip" id="oTimer" aria-pressed="false">Timer</button>
+    <button class="chip" id="oEV" aria-pressed="false">± 0.0</button>
+    <button class="chip" id="oAR" aria-pressed="false">3:4</button>
+    <button class="chip" id="oLoc" aria-pressed="false">Location</button>
     <button class="chip" id="oSound" aria-pressed="true">Sound</button>
   </div>
 </section>
@@ -300,26 +318,26 @@
 <script>
 /* ================= FILMOVI ================= */
 const FILMS = [
-  { id:"cinestill800t", name:"CineStill 800T", short:["CineStill","800T"], info:"NIGHT",
+  { id:"cinestill800t", iso:800, name:"CineStill 800T", short:["CineStill","800T"], info:"NIGHT",
     exposure:.95, contrast:.22, fade:.01, roll:.79, warm:.03, tint:-.04,
     shadows:[-.02,.008,.035], highlights:[.045,.035,.015], sat:1.2, grain:.08, halation:.6, halThresh:.6, vignette:.28, grainColor:0.4,
     hues:[[-2,1.02,0],[2,1.04,.01],[-6,1,0],[16,.92,-.01],[4,.98,0],[-8,.98,0],[-8,.92,0]] },
-  { id:"portra800", name:"Portra 800", short:["Portra","800"], info:"WEDDING",
+  { id:"portra800", iso:800, name:"Portra 800", short:["Portra","800"], info:"WEDDING",
     exposure:1.0, contrast:.12, fade:.048, roll:.68, warm:.17, tint:-.02,
     shadows:[-.05,-.015,.005], highlights:[.04,.065,.105], sat:1.02, grain:.075, halation:.12, vignette:.22, grainColor:0.35,
     hues:[[4,1.05,0],[2,1.08,0],[-3,1,0],[-12,.85,-.01],[-5,.9,0],[-6,.9,0],[0,.9,0]] },
-  { id:"portra400", name:"Portra 400", short:["Portra","400"], info:"DAY",
+  { id:"portra400", iso:400, name:"Portra 400", short:["Portra","400"], info:"DAY",
     exposure:1.17, contrast:.02, fade:.025, roll:.6, warm:-.01, tint:-.04,
     shadows:[-.003,-.005,.008], highlights:[.09,.07,.09], sat:.85, grain:.04, halation:.04, vignette:.10, grainColor:0.3,
     hues:[[6,1,0],[2,1.05,.01],[-4,.95,0],[-10,.85,0],[-6,.85,0],[-8,.85,.01],[0,.9,0]] },
-  { id:"ektar100", name:"Ektar 100", short:["Ektar","100"], info:"LANDSCAPE",
+  { id:"ektar100", iso:100, name:"Ektar 100", short:["Ektar","100"], info:"LANDSCAPE",
     exposure:1.06, contrast:.23, fade:.043, roll:.78, warm:.066, tint:-.056,
     shadows:[-.055,-.015,-.003], highlights:[-.018,-.028,-.023], sat:1.15, grain:.025, halation:.03, vignette:.22, grainColor:0.25,
     hues:[[-3,1.04,-.02],[-2,1.02,0],[-4,1,0],[-8,1.02,-.01],[0,1,0],[4,1.05,-.04],[0,1,0]] },
-  { id:"hp5", name:"HP5 Plus", short:["HP5","Plus"], info:"B&W",
+  { id:"hp5", iso:400, name:"HP5 Plus 400", short:["HP5 Plus","400"], info:"B&W",
     exposure:.97, contrast:.38, fade:.046, roll:.97, warm:0, tint:0,
     shadows:[0,0,0], highlights:[0,0,0], sat:0, bw:true, grain:.13, halation:0, vignette:.18, grainColor:0 },
-  { id:"gold200", name:"Gold 200", short:["Gold","200"], info:"GOLDEN",
+  { id:"gold200", iso:200, name:"Gold 200", short:["Gold","200"], info:"GOLDEN",
     exposure:1.16, contrast:.18, fade:.03, roll:.64, warm:.13, tint:-.035,
     shadows:[.02,.015,-.012], highlights:[-.04,-.05,-.075], sat:1.0, grain:.06, halation:.08, vignette:.20, grainColor:0.35,
     hues:[[8,1.05,0],[3,1.1,.01],[-2,1.15,.01],[-18,.9,0],[-8,.9,0],[-12,.85,.02],[-6,.9,0]] },
@@ -332,7 +350,7 @@ let film = FILMS.find(f => f.id === "portra400"), LUT, stream = null, track = nu
 let ev = 0, evHW = false, evRange = null, evBusy = false, evTimer = 0;
 function evDigital(){ return !evHW && Math.abs(ev) > .01; }
 let zoom = 1, zoomCur = 1, zoomAnim = 0, focusOK = false, focusTimer = 0, hwZoom = false, hwMax = 1, torchOK = false, torchOn = false, flashOK = false, flashOn = false, imageCapture = null;
-const opts = { date:false, frame:false, grid:0, timer:0, sound:true };   // grid: 0 off, 1 rule of thirds, 2 golden ratio
+const opts = { date:false, frame:false, grid:0, timer:0, sound:true, ar:"3:4", loc:false };   // grid: 0 off, 1 rule of thirds, 2 golden ratio
 const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const store = { get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
                 set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} } };
@@ -433,7 +451,7 @@ function filmFrame(src, no, f){
 const VS = "attribute vec2 p;varying vec2 v;void main(){v=p*.5+.5;gl_Position=vec4(p,0.,1.);}";
 const FS = `precision highp float;varying vec2 v;
 uniform sampler2D S,L,HT;uniform vec4 C;uniform vec2 R,HR;
-uniform float M,SAT,BW,G,GS,GC,VG,SEED,EV,HAL,HTH;
+uniform float M,SAT,BW,G,GS,GC,VG,SEED,EV,HAL,HTH,SHP;uniform vec2 TX;
 uniform float HC[7];uniform vec3 HB[7];
 float h(vec2 q){return fract(sin(dot(q,vec2(12.9898,78.233)))*43758.5453);}
 float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
@@ -445,7 +463,10 @@ vec3 hsv2rgb(vec3 c){vec4 K=vec4(1.,2./3.,1./3.,3.);vec3 p=abs(fract(c.xxx+K.xyz
 float br(vec3 x){return max(0.,(dot(x,vec3(.299,.587,.114))-HTH)/(1.-HTH));}
 void main(){
   vec2 uv=vec2(v.x,1.-v.y); if(M>.5) uv.x=1.-uv.x;
-  vec3 c=texture2D(S,C.xy+uv*C.zw).rgb, o;
+  vec2 sp=C.xy+uv*C.zw; vec3 c=texture2D(S,sp).rgb, o;
+  // izoštravanje (unsharp mask): vraća sitne detalje koje kamera telefona omekša
+  if(SHP>0.){ vec3 bl=(texture2D(S,sp+vec2(TX.x,0.)).rgb+texture2D(S,sp-vec2(TX.x,0.)).rgb+texture2D(S,sp+vec2(0.,TX.y)).rgb+texture2D(S,sp-vec2(0.,TX.y)).rgb)*.25;
+    c=clamp(c+(c-bl)*SHP,0.,1.); }
   if(EV!=1.) c=clamp(pow(pow(c,vec3(2.2))*EV,vec3(1./2.2)),0.,1.);
   if(BW>.5){ float y=dot(c,vec3(.30,.59,.11)); o=vec3(lut(y,0)); }
   else {
@@ -495,7 +516,7 @@ function makeGL(canvas, keep){
   const UD = {}; ["S","C","M","T"].forEach(n => UD[n] = gl.getUniformLocation(prD, n));
   gl.useProgram(prD); gl.uniform1i(UD.S, 0);
   gl.useProgram(pr); bindQuad(pr);
-  const U = {}; ["S","L","HT","C","R","HR","M","SAT","BW","G","GS","GC","VG","SEED","EV","HAL","HTH","HC","HB"].forEach(n => U[n] = gl.getUniformLocation(pr, n));
+  const U = {}; ["S","L","HT","C","R","HR","M","SAT","BW","G","GS","GC","VG","SEED","EV","HAL","HTH","HC","HB","SHP","TX"].forEach(n => U[n] = gl.getUniformLocation(pr, n));
   const tex = (unit, nearest) => { const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     const f = nearest ? gl.NEAREST : gl.LINEAR;
@@ -551,6 +572,8 @@ function makeGL(canvas, keep){
       gl.uniform1f(U.G, o.grain); gl.uniform1f(U.GS, o.grainSize || 1); gl.uniform1f(U.GC, f.grainColor || 0);
       gl.uniform1f(U.VG, o.vig); gl.uniform1f(U.SEED, (o.seed != null ? o.seed : Math.random()) * 100);
       gl.uniform1f(U.EV, o.ev || 1);
+      const SW = o.srcW || o.w, SH = o.srcH || o.h;
+      gl.uniform1f(U.SHP, o.sharpen || 0); gl.uniform2f(U.TX, 1 / SW, 1 / SH);
       const hb = new Float32Array(21); (f.hues || []).forEach((b, i) => { hb[i*3] = b[0]; hb[i*3+1] = b[1]; hb[i*3+2] = b[2]; });
       if (!f.hues) for (let i = 0; i < 7; i++) hb[i*3+1] = 1;
       gl.uniform3fv(U.HB, hb);
@@ -575,6 +598,12 @@ function makeBase(src, sw, sh, fromCam){
   let sx = 0, sy = 0, cw = sw, ch = sh;
   const dz = fromCam ? digitalPart(zoom) : 1;
   if (dz > 1.001){ cw = sw/dz; ch = sh/dz; sx = (sw-cw)/2; sy = (sh-ch)/2; }
+  if (fromCam){
+    // format 3:4 ili 16:9 (uspravno; za položene slike obrnuto)
+    let tr = opts.ar === "16:9" ? 9/16 : 3/4; if (cw > ch) tr = 1 / tr;
+    if (cw / ch > tr + .001){ const nw = ch * tr; sx += (cw - nw) / 2; cw = nw; }
+    else if (cw / ch < tr - .001){ const nh = cw / tr; sy += (ch - nh) / 2; ch = nh; }
+  }
   const lim = Math.min(4000, glCap ? glCap.maxTex : 4000);
   const k = Math.min(1, lim / Math.max(cw, ch)), w = Math.round(cw*k), h = Math.round(ch*k);
   const c = document.createElement("canvas"); c.width = w; c.height = h;
@@ -596,7 +625,7 @@ function processBase(base, f, o, no){
   if (glCap){
     try{
       if (L !== LUT) glCap.setLUT(L);
-      glCap.draw(base, { w, h, film: f, mirror: false, vig, crop: [0, 0, 1, 1], grain: f.grain, grainSize: Math.max(1, w / 2200) });
+      glCap.draw(base, { w, h, film: f, mirror: false, vig, crop: [0, 0, 1, 1], grain: f.grain, grainSize: Math.max(1, w / 3200), sharpen: .75 });
       ctx.drawImage(glCapCanvas, 0, 0);
       if (L !== LUT) glCap.setLUT(LUT);
       done = true;
@@ -615,7 +644,7 @@ function processBase(base, f, o, no){
 }
 function develop(src, sw, sh, no, fromCam){
   const base = makeBase(src, sw, sh, fromCam);
-  const o = { date: opts.date, frame: opts.frame, rnd: null, t: Date.now() };
+  const o = { date: opts.date, frame: opts.frame, rnd: null, t: Date.now(), loc: opts.loc ? currentLoc() : null };
   return { canvas: processBase(base, film, o, no), base, o };
 }
 
@@ -684,7 +713,7 @@ function syncNativeFilm(){
   if (!NC) return;
   const f = film;
   NATIVE.camFilm(JSON.stringify({ lut: [...LUT[0], ...LUT[1], ...LUT[2]], sat: f.sat, bw: !!f.bw, grain: f.grain, grainColor: f.grainColor || 0,
-    vignette: f.vignette, halation: f.halation || 0, halThresh: f.halThresh || .72, hues: f.hues || [] }));
+    vignette: f.vignette, halation: f.halation || 0, halThresh: f.halThresh || .72, hues: f.hues || [], iso: f.iso || 0 }));
 }
 function startNative(){
   stream = "native"; track = null; live = true;
@@ -845,7 +874,7 @@ async function applyEV(){
   try{ await track.applyConstraints({advanced:[{exposureMode: "continuous", exposureCompensation: v}]}); }catch(e){ evHW = false; }
   evBusy = false;
 }
-function setEV(v){ ev = Math.max(-2, Math.min(2, v)); showEV(); applyEV(); }
+function setEV(v){ ev = Math.max(-2, Math.min(2, v)); showEV(); applyEV(); if ($("ticks")) updateEvUI(); }
 $("evpill").onclick = e => { e.stopPropagation(); setEV(0); };
 function bindTap(){
   const vf = $("vf");
@@ -892,8 +921,8 @@ function fileName(film_id, t){ const d = new Date(t); return `KADAR_${d.getFullY
 let current = null; // {id, blob, film, no, t}
 
 async function commit(res, no){
-  const blob = await new Promise(r => res.canvas.toBlob(r, "image/jpeg", 0.92));
-  const orig = await new Promise(r => res.base.toBlob(r, "image/jpeg", 0.9));
+  const blob = await withExif(await new Promise(r => res.canvas.toBlob(r, "image/jpeg", 0.95)), res.o);
+  const orig = await new Promise(r => res.base.toBlob(r, "image/jpeg", 0.93));
   const rec = { blob, orig, film: film.id, no, t: res.o.t, o: res.o };
   rec.id = await dbAdd(rec);
   current = rec;
@@ -939,7 +968,7 @@ async function redevelop(f){
     const o = rec.o || { date: false, frame: false, rnd: null, t: rec.t };
     const c = processBase(img, f, o, rec.no);
     img.close && img.close();
-    rec.blob = await new Promise(r => c.toBlob(r, "image/jpeg", 0.92));
+    rec.blob = await withExif(await new Promise(r => c.toBlob(r, "image/jpeg", 0.95)), o);
     rec.film = f.id;
     await dbPut(rec);
     showPhoto(c, rec, true);
@@ -1275,6 +1304,7 @@ function go(id){
   if (cur && cur.id !== id && cur.id !== "sPhoto") prev = cur.id;
   document.querySelectorAll(".screen").forEach(s => s.classList.toggle("on", s.id === id));
   if (id === "sRoll") renderGrid(); else if (selecting) exitSelect();
+  if (id === "sCam") requestAnimationFrame(layoutVF);
   if (id === "sCam"){ if (NC){ if (stream !== "native" && store.get("fk_cam", false)) startCamera(); else sendRect(); } else updateCounter(); }
   else { stopLoop(); cancelCountdown(); if (NC && stream === "native") stopCamera(); }
 }
@@ -1300,7 +1330,7 @@ function renderStyles(){
   const box = $("styles"); box.innerHTML = "";
   FILMS.forEach((f, i) => {
     const b = document.createElement("button"); b.className = "style" + (f === film ? " on" : "");
-    b.innerHTML = `${f.name}<small>${f.info}</small>`; b.dataset.i = i;
+    b.innerHTML = `${f.name}<small>ISO ${f.iso} · ${f.info}</small>`; b.dataset.i = i;
     b.onclick = () => b.scrollIntoView({behavior:"smooth", inline:"center", block:"nearest"});
     box.appendChild(b);
   });
@@ -1324,6 +1354,137 @@ function bindOpt(id, key){
   const b = $(id); b.setAttribute("aria-pressed", opts[key]);
   b.onclick = () => { opts[key] = !opts[key]; b.setAttribute("aria-pressed", opts[key]); store.set("fk_opts", opts);
     if (key === "date"){ $("stamp").classList.toggle("on", opts.date); } };
+}
+
+
+/* ================= LOKACIJA + EXIF =================
+   Kad je uključena, lokacija se upisuje u samu fotografiju (EXIF, kao kod kamere telefona),
+   pa je Google Photos i galerija prikazuju na mapi. Nigde se ne šalje. */
+let lastLoc = null, geoWatch = null;
+function currentLoc(){
+  if (NATIVE && NATIVE.lastLocation){ try{ const j = NATIVE.lastLocation(); if (j) lastLoc = JSON.parse(j); }catch(e){} }
+  return lastLoc && Date.now() - (lastLoc.time || 0) < 30 * 60 * 1000 ? { lat: lastLoc.lat, lon: lastLoc.lon, alt: lastLoc.alt } : null;
+}
+function locOn(){
+  if (NATIVE && NATIVE.locStart){ NATIVE.locStart(); return; }
+  if (navigator.geolocation && geoWatch == null){
+    geoWatch = navigator.geolocation.watchPosition(p => { lastLoc = { lat: p.coords.latitude, lon: p.coords.longitude, alt: p.coords.altitude, time: Date.now() }; },
+      () => toast("Location is off. Allow it in settings."), { enableHighAccuracy: true, maximumAge: 60000 });
+  }
+}
+function locOff(){
+  if (NATIVE && NATIVE.locStop){ NATIVE.locStop(); return; }
+  if (geoWatch != null){ navigator.geolocation.clearWatch(geoWatch); geoWatch = null; }
+}
+function bindLoc(){
+  const b = $("oLoc"); b.setAttribute("aria-pressed", !!opts.loc);
+  if (opts.loc) locOn();
+  b.onclick = () => { opts.loc = !opts.loc; b.setAttribute("aria-pressed", opts.loc); store.set("fk_opts", opts);
+    if (opts.loc){ locOn(); toast("Location will be saved in your photos."); } else locOff(); };
+}
+function exifBytes(o){
+  const enc = s => [...s].map(c => c.charCodeAt(0)).concat([0]);
+  const d = new Date(o.t || Date.now()), p2 = n => String(n).padStart(2, "0");
+  const dt = enc(`${d.getFullYear()}:${p2(d.getMonth()+1)}:${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}`);
+  const rat = v => { const x = Math.abs(v); const dg = Math.floor(x), mf = (x - dg) * 60, mn = Math.floor(mf), sc = Math.round((mf - mn) * 60 * 10000);
+    return [[dg, 1], [mn, 1], [sc, 10000]]; };
+  // tag, type (1 BYTE, 2 ASCII, 4 LONG, 5 RATIONAL), values
+  const ifd0 = [[0x0131, 2, enc("Kadar")], [0x0132, 2, dt], [0x8769, 4, null]];
+  const exif = [[0x9003, 2, dt], [0x9004, 2, dt]];
+  let gps = null;
+  if (o.loc && isFinite(o.loc.lat) && isFinite(o.loc.lon)){
+    ifd0.push([0x8825, 4, null]);
+    gps = [[0x0000, 1, [2, 3, 0, 0]], [0x0001, 2, enc(o.loc.lat >= 0 ? "N" : "S")], [0x0002, 5, rat(o.loc.lat)],
+           [0x0003, 2, enc(o.loc.lon >= 0 ? "E" : "W")], [0x0004, 5, rat(o.loc.lon)]];
+    if (o.loc.alt != null && isFinite(o.loc.alt)) gps.push([0x0005, 1, [o.loc.alt < 0 ? 1 : 0]], [0x0006, 5, [[Math.round(Math.abs(o.loc.alt) * 100), 100]]]);
+  }
+  const size = (t, v) => t === 5 ? v.length * 8 : t === 4 ? 4 : v.length;
+  const ifdLen = list => 2 + list.length * 12 + 4;
+  const extra = list => list.reduce((a, [, t, v]) => { const n = v ? size(t, v) : 4; return a + (n > 4 ? n + (n & 1) : 0); }, 0);
+  const o0 = 8, oE = o0 + ifdLen(ifd0) + extra(ifd0), oG = oE + ifdLen(exif) + extra(exif);
+  const total = oG + (gps ? ifdLen(gps) + extra(gps) : 0);
+  const buf = new DataView(new ArrayBuffer(total)); let le = true;
+  buf.setUint16(0, 0x4949); buf.setUint16(2, 42, le); buf.setUint32(4, 8, le);
+  const write = (list, at, ptrs) => {
+    list.sort((a, b) => a[0] - b[0]);
+    buf.setUint16(at, list.length, le);
+    let data = at + ifdLen(list);
+    list.forEach(([tag, t, v], i) => {
+      const e = at + 2 + i * 12; buf.setUint16(e, tag, le); buf.setUint16(e + 2, t, le);
+      if (v === null){ buf.setUint32(e + 4, 1, le); buf.setUint32(e + 8, ptrs[tag], le); return; }
+      const cnt = t === 5 ? v.length : v.length, n = size(t, v);
+      buf.setUint32(e + 4, t === 4 ? 1 : cnt, le);
+      let w = n > 4 ? data : e + 8;
+      if (t === 5) v.forEach(([a, b], k) => { buf.setUint32(w + k*8, a, le); buf.setUint32(w + k*8 + 4, b, le); });
+      else if (t === 4) buf.setUint32(w, v, le);
+      else v.forEach((b, k) => buf.setUint8(w + k, b));
+      if (n > 4){ buf.setUint32(e + 8, data, le); data += n + (n & 1); }
+    });
+    buf.setUint32(at + 2 + list.length * 12, 0, le);
+  };
+  write(ifd0, o0, { 0x8769: oE, 0x8825: oG });
+  write(exif, oE, {});
+  if (gps) write(gps, oG, {});
+  const head = new Uint8Array([0x45, 0x78, 0x69, 0x66, 0, 0]);
+  const body = new Uint8Array(buf.buffer);
+  const seg = new Uint8Array(4 + head.length + body.length);
+  seg[0] = 0xFF; seg[1] = 0xE1; const L = 2 + head.length + body.length; seg[2] = L >> 8; seg[3] = L & 255;
+  seg.set(head, 4); seg.set(body, 4 + head.length);
+  return seg;
+}
+async function withExif(blob, o){
+  try{
+    const b = new Uint8Array(await blob.arrayBuffer());
+    if (b[0] !== 0xFF || b[1] !== 0xD8) return blob;
+    const seg = exifBytes(o || {});
+    return new Blob([b.slice(0, 2), seg, b.slice(2)], { type: "image/jpeg" });
+  }catch(e){ return blob; }
+}
+
+/* ================= FORMAT 3:4 / 16:9 ================= */
+function layoutVF(){
+  const box = $("vfbox").getBoundingClientRect(); if (!box.width || !box.height) return;
+  const ar = opts.ar === "16:9" ? 9/16 : 3/4;
+  let w = box.width, h = w / ar; if (h > box.height){ h = box.height; w = h * ar; }
+  $("vf").style.width = Math.floor(w) + "px"; $("vf").style.height = Math.floor(h) + "px";
+  setTimeout(sendRect, 220);
+}
+function bindAR(){
+  const b = $("oAR"); b.textContent = opts.ar;
+  b.onclick = () => { opts.ar = opts.ar === "3:4" ? "16:9" : "3:4"; b.textContent = opts.ar; store.set("fk_opts", opts); layoutVF(); };
+  layoutVF();
+}
+window.addEventListener("resize", () => requestAnimationFrame(layoutVF));
+
+/* ================= EKSPOZICIJA (kao na iPhone-u) =================
+   Dugme ± otvara lenjir: prevuci levo/desno od −2 do +2. */
+const PX_PER_EV = 70;
+function buildTicks(){
+  const t = $("ticks"); let h = "";
+  for (let i = -6; i <= 6; i++){ const v = i / 3; h += `<i class="${i % 3 === 0 ? "maj" : ""}" style="left:${v * PX_PER_EV}px"></i>`; }
+  t.innerHTML = h;
+}
+function updateEvUI(){
+  const txt = (ev > 0 ? "+" : ev < 0 ? "−" : "") + Math.abs(ev).toFixed(1);
+  $("evval").textContent = txt; $("oEV").textContent = "± " + txt.replace("+", "");
+  $("oEV").textContent = (Math.abs(ev) < .05 ? "± 0.0" : txt);
+  $("oEV").setAttribute("aria-pressed", !$("evbar").hidden || Math.abs(ev) >= .05);
+  $("ticks").style.transform = `translateX(${-ev * PX_PER_EV}px)`;
+}
+function bindEVBar(){
+  buildTicks();
+  $("oEV").onclick = () => {
+    const open = $("evbar").hidden;
+    $("evbar").hidden = !open; $("styles").style.display = open ? "none" : "";
+    if (!open) requestAnimationFrame(() => { const i = FILMS.indexOf(film); $("styles").children[i] && $("styles").children[i].scrollIntoView({inline:"center", block:"nearest"}); });
+    updateEvUI();
+  };
+  const r = $("ruler"); let st = null;
+  r.addEventListener("pointerdown", e => { st = { x: e.clientX, ev }; r.setPointerCapture(e.pointerId); });
+  r.addEventListener("pointermove", e => { if (!st) return; setEV(Math.round((st.ev - (e.clientX - st.x) / PX_PER_EV) * 10) / 10); });
+  ["pointerup","pointercancel"].forEach(n => r.addEventListener(n, () => { st = null; }));
+  r.addEventListener("dblclick", () => setEV(0));
+  updateEvUI();
 }
 
 /* Tajmer: isključen, 3 s, 10 s */
@@ -1358,7 +1519,7 @@ function bindGrid(){
   bindTap();
   $("stamp").textContent = dateText(); $("stamp").classList.toggle("on", opts.date);
   bindOpt("oDate", "date"); bindOpt("oFrame", "frame");
-  bindGrid(); bindTimer(); bindOpt("oSound", "sound");
+  bindGrid(); bindTimer(); bindOpt("oSound", "sound"); bindEVBar(); bindAR(); bindLoc();
   renderStyles();
   if (NATIVE) $("bNative").style.display = "none";
   await openDB();
