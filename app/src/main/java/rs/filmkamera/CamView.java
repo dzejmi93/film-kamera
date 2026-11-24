@@ -47,7 +47,7 @@ import javax.microedition.khronos.opengles.GL10;
  */
 public class CamView extends GLSurfaceView implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener {
 
-    public interface PhotoListener { void onPhoto(int id); void onError(String msg); }
+    public interface PhotoListener { void onPhoto(int id); void onError(String msg); void onFocus(boolean ok); }
 
     private final Activity act;
     private final CameraManager cm;
@@ -85,6 +85,7 @@ public class CamView extends GLSurfaceView implements GLSurfaceView.Renderer, Su
     private boolean flashOn;
     private MeteringRectangle[] focusRegion;
     private Runnable focusReset;
+    private volatile boolean awaitingAf = false;
     private Runnable zoomAnim;
     public volatile int deviceRotation = 0;
     private int photoSeq = 0;
@@ -319,6 +320,13 @@ public class CamView extends GLSurfaceView implements GLSurfaceView.Renderer, Su
             Long e = res.get(CaptureResult.SENSOR_EXPOSURE_TIME);
             Integer i = res.get(CaptureResult.SENSOR_SENSITIVITY);
             if (e != null && i != null && e > 0 && i > 0) { lastExp = e; lastIso = i; }
+            if (awaitingAf) {
+                Integer af = res.get(CaptureResult.CONTROL_AF_STATE);
+                if (af != null && (af == CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED || af == CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED)) {
+                    awaitingAf = false;
+                    if (listener != null) listener.onFocus(af == CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED);
+                }
+            }
         }
     };
 
@@ -410,16 +418,28 @@ public class CamView extends GLSurfaceView implements GLSurfaceView.Renderer, Su
             Rect r = new Rect(Math.max(0, cx - half), Math.max(0, cy - half), Math.min(W - 1, cx + half), Math.min(H - 1, cy + half));
             focusRegion = new MeteringRectangle[]{ new MeteringRectangle(r, MeteringRectangle.METERING_WEIGHT_MAX - 1) };
             try {
+                // 1) preview prelazi na fokus na dodirnutom mestu (nekoliko kadrova pre okidanja fokusa)
                 fill(preview, zoomShown);
+                preview.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_IDLE);
+                session.setRepeatingRequest(preview.build(), meter, bg);
+                // 2) prekini staro traženje fokusa i pokreni novo
                 preview.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_CANCEL);
                 session.capture(preview.build(), null, bg);
-                preview.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_START);
-                session.capture(preview.build(), null, bg);
-                applyPreview();
+                final CaptureRequest.Builder p = preview;
+                bg.postDelayed(() -> {
+                    try {
+                        if (session == null || preview != p) return;
+                        p.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_START);
+                        awaitingAf = true;
+                        session.capture(p.build(), null, bg);
+                        p.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_IDLE);
+                    } catch (Exception ignored) {}
+                }, 60);
             } catch (Exception ignored) {}
             if (focusReset != null) bg.removeCallbacks(focusReset);
-            focusReset = () -> { focusRegion = null; applyPreview(); };
-            bg.postDelayed(focusReset, 6000);
+            // fokus ostaje zaključan 8 s, pa se vraća na automatski
+            focusReset = () -> { focusRegion = null; awaitingAf = false; applyPreview(); };
+            bg.postDelayed(focusReset, 8000);
         });
     }
 

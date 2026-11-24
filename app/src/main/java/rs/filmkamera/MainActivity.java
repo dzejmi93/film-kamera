@@ -397,6 +397,7 @@ public class MainActivity extends Activity {
         cam.setVisibility(View.INVISIBLE);
         cam.setListener(new CamView.PhotoListener() {
             @Override public void onPhoto(int id) { runOnUiThread(() -> web.evaluateJavascript("window.__nativePhoto&&window.__nativePhoto(" + id + ")", null)); }
+            @Override public void onFocus(boolean ok) { runOnUiThread(() -> web.evaluateJavascript("window.__afDone&&window.__afDone(" + ok + ")", null)); }
             @Override public void onError(String m) {
                 final String q = m == null ? "" : m.replace("\\", " ").replace("'", " ").replace("\n", " ");
                 runOnUiThread(() -> web.evaluateJavascript("window.__nativeCamError&&window.__nativeCamError('" + q + "')", null));
