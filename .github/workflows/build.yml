@@ -38,5 +38,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          VERSION=$(grep -oP "versionName '\K[^']+" app/build.gradle)
+          printf '%s\n' \
+            "**Kadar ${VERSION}** — free film camera for Android." "" \
+            "1. Download **Kadar.apk** below on your phone." \
+            "2. Open it and allow installing from this source if Android asks." \
+            "3. If Play Protect warns, tap *More details → Install anyway*." "" \
+            "To update, install the new APK over the old one. Your roll stays." "" \
+            "Built from commit ${GITHUB_SHA::7}." > notes.md
           gh release delete latest --yes --cleanup-tag || true
-          gh release create latest Kadar.apk --title "Kadar" --notes "Download Kadar.apk on your phone and install it."
+          gh release create latest Kadar.apk --title "Kadar ${VERSION}" --notes-file notes.md
