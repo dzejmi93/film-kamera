@@ -1,12 +1,12 @@
-# Kadar
+# Latent — retro film camera for Android
 
 **A free, open-source film camera for Android.** Pick a film, shoot, and every photo comes out looking like it was taken on that stock: color, grain, the red glow around night lights, all of it.
 
 No account, no ads, no subscription, no server. Your photos never leave your phone unless you send them somewhere yourself.
 
-> *Kadar* (Serbian) — a single frame on a roll of film.
+> *Latent image* — the picture that's already on the film after you shoot, before it's developed.
 
-**[⬇ Download Kadar.apk](https://github.com/dzejmi93/film-kamera/releases/download/latest/Kadar.apk)** · Android 7+ (Android 11+ recommended) · ~350 KB
+**[⬇ Download Latent.apk](../../releases/download/latest/Latent.apk)** · Android 7+ (Android 11+ recommended) · ~350 KB
 
 ---
 
@@ -36,21 +36,21 @@ You can **change the film after shooting**: the original is kept, so any photo i
 - **Location (optional):** saved inside the photo (EXIF), so your gallery and Google Photos show it on the map. Off by default.
 - **Volume buttons** take the photo, with a shutter and film-advance sound.
 - **Roll (album)** grouped by day, like an event album. Select several photos to save, send or delete.
-- **Save to gallery** (`Pictures/Kadar`) or **send to Google Photos / Google Drive** straight from the phone to your own account.
+- **Save to gallery** (`Pictures/Latent`) or **send to Google Photos / Google Drive** straight from the phone to your own account.
 - **Upload** photos from your gallery and develop them with any film.
 
 ## Install
 
-1. On your phone, open **[Kadar.apk](https://github.com/dzejmi93/film-kamera/releases/download/latest/Kadar.apk)** and download it.
+1. On your phone, open **[Latent.apk](../../releases/download/latest/Latent.apk)** and download it.
 2. Open the file. If Android asks, allow installing apps from this source (your browser or file manager).
 3. If **Play Protect** warns about an unknown app, tap **More details → Install anyway**. This is normal for apps that aren't on the Play Store.
-4. Open Kadar and allow the camera.
+4. Open Latent and allow the camera.
 
 **Updating:** download the APK again from the same link and install it over the old one. Your roll stays.
 
 ## Privacy
 
-Kadar has no server and no analytics. It only uses the internet to load its fonts.
+Latent has no server and no analytics. It only uses the internet to load its fonts.
 
 | Permission | Why |
 |---|---|
@@ -58,7 +58,7 @@ Kadar has no server and no analytics. It only uses the internet to load its font
 | Location | Only if you turn **Location** on, to write it into the photo. Never sent anywhere. |
 | Storage (Android 9 and older) | To save photos to your gallery. |
 
-Photos in your roll are stored inside the app. **Uninstalling Kadar deletes the roll**, so tap *Save* first. Photos you already saved to your gallery, Google Photos or Drive stay where they are.
+Photos in your roll are stored inside the app. **Uninstalling Latent deletes the roll**, so tap *Save* first. Photos you already saved to your gallery, Google Photos or Drive stay where they are.
 
 ## FAQ
 
@@ -68,21 +68,21 @@ Photos in your roll are stored inside the app. **Uninstalling Kadar deletes the 
 
 **The photo looks dark.** You probably picked a low-ISO film (Ektar 100) in dim light. Try Portra 800 or CineStill 800T, like you would with real film.
 
-**Found a bug or have an idea?** Open an [issue](https://github.com/dzejmi93/film-kamera/issues). Tell me your phone model and what happened.
+**Found a bug or have an idea?** Open an [issue](../../issues). Tell me your phone model and what happened.
 
 ## Build it yourself
 
-Every push to `main` builds a signed APK with GitHub Actions and publishes it to [Releases](https://github.com/dzejmi93/film-kamera/releases/tag/latest). To build locally: `gradle assembleRelease` (Java 17, Android SDK 34).
+Every push to `main` builds a signed APK with GitHub Actions and publishes it to [Releases](../../releases/tag/latest). To build locally: `gradle assembleRelease` (Java 17, Android SDK 34).
 
 The app is a small native Android shell (camera, saving, sharing) around one web page (`app/src/main/assets/index.html`) that holds the UI and the film engine.
 
 ## Contributing
 
-Kadar is open source under the [MIT License](LICENSE): you can read the code, use it, change it and build on it.
+Latent is open source under the [MIT License](LICENSE): you can read the code, use it, change it and build on it.
 
 Ideas, bug reports and pull requests are welcome:
 
-- **Bugs and ideas:** open an [issue](https://github.com/dzejmi93/film-kamera/issues) with your phone model and what happened.
+- **Bugs and ideas:** open an [issue](../../issues) with your phone model and what happened.
 - **Code:** fork the repo, make your change and open a pull request. Every push builds an APK automatically, so you can test it on your phone.
 - **Film looks** live in `FILMS` at the top of the script in `app/src/main/assets/index.html`: tone curve, color per shade, grain, halation and vignette. A new film is one entry there.
 
@@ -92,6 +92,6 @@ Ideas, bug reports and pull requests are welcome:
 
 ---
 
-*Film names describe the look each preset is modeled on. Kadar is not affiliated with or endorsed by Kodak, Ilford/Harman or CineStill; all trademarks belong to their owners.*
+*Film names describe the look each preset is modeled on. Latent is not affiliated with or endorsed by Kodak, Ilford/Harman or CineStill; all trademarks belong to their owners.*
 
 *Made in Serbia 🇷🇸 · Kamera sa analognim filmovima, besplatna i bez servera — slike ostaju na tvom telefonu.*

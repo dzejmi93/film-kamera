@@ -1,6 +1,6 @@
 {
-  "name": "Kadar",
-  "short_name": "Kadar",
+  "name": "Latent",
+  "short_name": "Latent",
   "description": "A film camera. Your photos stay on your phone.",
   "start_url": "./",
   "scope": "./",

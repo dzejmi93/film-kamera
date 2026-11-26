@@ -174,7 +174,7 @@ public class CamView extends GLSurfaceView implements GLSurfaceView.Renderer, Su
         front = useFront;
         wantOpen = true;
         if (thread == null) {
-            thread = new HandlerThread("kadar-cam");
+            thread = new HandlerThread("latent-cam");
             thread.start();
             bg = new Handler(thread.getLooper());
         }

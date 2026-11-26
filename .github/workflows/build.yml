@@ -27,12 +27,12 @@ jobs:
         run: gradle assembleRelease --no-daemon --stacktrace
 
       - name: Rename APK
-        run: cp app/build/outputs/apk/release/app-release.apk Kadar.apk
+        run: cp app/build/outputs/apk/release/app-release.apk Latent.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Kadar
-          path: Kadar.apk
+          name: Latent
+          path: Latent.apk
 
       - name: Publish download
         env:
@@ -40,11 +40,11 @@ jobs:
         run: |
           VERSION=$(grep -oP "versionName '\K[^']+" app/build.gradle)
           printf '%s\n' \
-            "**Kadar ${VERSION}** — free film camera for Android." "" \
-            "1. Download **Kadar.apk** below on your phone." \
+            "**Latent ${VERSION}** — free retro film camera for Android." "" \
+            "1. Download **Latent.apk** below on your phone." \
             "2. Open it and allow installing from this source if Android asks." \
             "3. If Play Protect warns, tap *More details → Install anyway*." "" \
             "To update, install the new APK over the old one. Your roll stays." "" \
             "Built from commit ${GITHUB_SHA::7}." > notes.md
           gh release delete latest --yes --cleanup-tag || true
-          gh release create latest Kadar.apk --title "Kadar ${VERSION}" --notes-file notes.md
+          gh release create latest Latent.apk --title "Latent ${VERSION}" --notes-file notes.md

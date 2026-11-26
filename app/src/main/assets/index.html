@@ -6,12 +6,12 @@
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Kadar">
+<meta name="apple-mobile-web-app-title" content="Latent">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon-192.png">
-<title>Kadar</title>
+<title>Latent</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Manrope:wght@400;500;600;700&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
 <style>
@@ -30,7 +30,8 @@
   .circ svg{width:20px;height:20px}
   .circ[aria-pressed="true"]{background:#fff;color:#000}
   .circ.ghost{visibility:hidden}
-  .brand{font-family:Fraunces,serif;font-style:italic;font-size:26px;letter-spacing:-.01em}
+  .brand{font-family:Fraunces,serif;font-style:italic;font-size:26px;letter-spacing:-.01em;padding-right:4px;
+    background:linear-gradient(90deg,#fff 42%,rgba(255,255,255,.28) 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
   .counter{text-align:center;line-height:1}
   .counter b{display:block;font-family:Fraunces,serif;font-weight:400;font-size:30px;font-variation-settings:"opsz" 72}
   .counter span{font-size:10px;letter-spacing:.16em;color:var(--mute)}
@@ -187,7 +188,7 @@
     <button class="circ ghost" id="bFlash" aria-label="Flash" aria-pressed="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
     </button>
-    <div class="brand">Kadar</div>
+    <div class="brand">Latent</div>
     <div class="topR">
     <button class="circ" id="bSet" aria-label="Settings" aria-pressed="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
@@ -921,7 +922,7 @@ $("bFlash").onclick = async () => {
 
 /* ================= OKIDANJE ================= */
 const pad = n => String(n).padStart(2, "0");
-function fileName(film_id, t){ const d = new Date(t); return `KADAR_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}_${film_id}.jpg`; }
+function fileName(film_id, t){ const d = new Date(t); return `LATENT_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}_${film_id}.jpg`; }
 let current = null; // {id, blob, film, no, t}
 
 async function commit(res, no){
@@ -1113,7 +1114,7 @@ $("bSave").onclick = async () => {
   if (!current || !current.blob){ toast("Still developing…"); return; }
   if (NATIVE){
     const ok = NATIVE.saveImage(await toB64(current.blob), fileName(current.film, current.t));
-    toast(ok ? "Saved to gallery · Kadar" : "Couldn’t save. Try again.");
+    toast(ok ? "Saved to gallery · Latent" : "Couldn’t save. Try again.");
     return;
   }
   if (isIOS){ if (!(await shareFiles([asFile(current)], "Choose “Save Image”"))) download(current.blob, fileName(current.film, current.t)); }
@@ -1179,7 +1180,7 @@ $("bSend").onclick = async () => {
   if (!list.length){ toast("Your roll is empty."); return; }
   sendPending = list;
   $("sendTitle").textContent = `Send ${list.length} photo${list.length > 1 ? "s" : ""}`;
-  $("sendText").textContent = "Google Photos adds them to your own library, where you can make an album and share it. Nothing passes through Kadar.";
+  $("sendText").textContent = "Google Photos adds them to your own library, where you can make an album and share it. Nothing passes through Latent.";
   $("sendSheet").classList.add("on");
 };
 const closeSend = () => $("sendSheet").classList.remove("on");
@@ -1393,7 +1394,7 @@ function exifBytes(o){
   const rat = v => { const x = Math.abs(v); const dg = Math.floor(x), mf = (x - dg) * 60, mn = Math.floor(mf), sc = Math.round((mf - mn) * 60 * 10000);
     return [[dg, 1], [mn, 1], [sc, 10000]]; };
   // tag, type (1 BYTE, 2 ASCII, 4 LONG, 5 RATIONAL), values
-  const ifd0 = [[0x0131, 2, enc("Kadar")], [0x0132, 2, dt], [0x8769, 4, null]];
+  const ifd0 = [[0x0131, 2, enc("Latent")], [0x0132, 2, dt], [0x8769, 4, null]];
   const exif = [[0x9003, 2, dt], [0x9004, 2, dt]];
   let gps = null;
   if (o.loc && isFinite(o.loc.lat) && isFinite(o.loc.lon)){

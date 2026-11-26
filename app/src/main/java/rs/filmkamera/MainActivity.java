@@ -269,7 +269,7 @@ public class MainActivity extends Activity {
     }
 
     private static String safeName(String n) {
-        String s = (n == null ? "KADAR.jpg" : n).replaceAll("[^A-Za-z0-9_.-]", "_");
+        String s = (n == null ? "LATENT.jpg" : n).replaceAll("[^A-Za-z0-9_.-]", "_");
         return s.endsWith(".jpg") ? s : s + ".jpg";
     }
 
@@ -288,7 +288,7 @@ public class MainActivity extends Activity {
             ContentValues v = new ContentValues();
             v.put(MediaStore.Images.Media.DISPLAY_NAME, name);
             v.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
-            v.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Kadar");
+            v.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Latent");
             v.put(MediaStore.Images.Media.IS_PENDING, 1);
             Uri uri = r.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, v);
             if (uri == null) return false;
@@ -305,7 +305,7 @@ public class MainActivity extends Activity {
             requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQ_STORAGE);
             return false;
         }
-        File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Kadar");
+        File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Latent");
         if (!dir.exists()) dir.mkdirs();
         File f = new File(dir, name);
         FileOutputStream out = new FileOutputStream(f);
