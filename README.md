@@ -1,6 +1,6 @@
 # Kadar
 
-**A free film camera for Android.** Pick a film, shoot, and every photo comes out looking like it was taken on that stock: color, grain, the red glow around night lights, all of it.
+**A free, open-source film camera for Android.** Pick a film, shoot, and every photo comes out looking like it was taken on that stock: color, grain, the red glow around night lights, all of it.
 
 No account, no ads, no subscription, no server. Your photos never leave your phone unless you send them somewhere yourself.
 
@@ -75,6 +75,20 @@ Photos in your roll are stored inside the app. **Uninstalling Kadar deletes the 
 Every push to `main` builds a signed APK with GitHub Actions and publishes it to [Releases](https://github.com/dzejmi93/film-kamera/releases/tag/latest). To build locally: `gradle assembleRelease` (Java 17, Android SDK 34).
 
 The app is a small native Android shell (camera, saving, sharing) around one web page (`app/src/main/assets/index.html`) that holds the UI and the film engine.
+
+## Contributing
+
+Kadar is open source under the [MIT License](LICENSE): you can read the code, use it, change it and build on it.
+
+Ideas, bug reports and pull requests are welcome:
+
+- **Bugs and ideas:** open an [issue](https://github.com/dzejmi93/film-kamera/issues) with your phone model and what happened.
+- **Code:** fork the repo, make your change and open a pull request. Every push builds an APK automatically, so you can test it on your phone.
+- **Film looks** live in `FILMS` at the top of the script in `app/src/main/assets/index.html`: tone curve, color per shade, grain, halation and vignette. A new film is one entry there.
+
+## License
+
+[MIT](LICENSE) © 2026 dzejmi93
 
 ---
 
